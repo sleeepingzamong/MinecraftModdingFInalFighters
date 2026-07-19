@@ -42,9 +42,13 @@ public class SkillProjectileRenderer extends EntityRenderer<SkillProjectileEntit
         poseStack.mulPose(Axis.YP.rotationDegrees(YAW_OFFSET));
         poseStack.mulPose(Axis.XP.rotationDegrees(PITCH_OFFSET));
         poseStack.mulPose(Axis.ZP.rotationDegrees(ROLL_OFFSET));
-        // 단검은 모델이 세로라 90도 눕혀서 (칼끝이 앞을 보게)
-        if (entity.getItem().is(ModItems.KNIFE.get())) {
+        // 단검·총알은 모델이 세로라 90도 눕혀서 (끝이 앞을 보게)
+        if (entity.getItem().is(ModItems.KNIFE.get()) || entity.getItem().is(ModItems.BULLET.get())) {
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
+        }
+        // 카드는 반대 방향으로 눕혀서 앞면이 땅을 보게
+        if (entity.getItem().is(ModItems.CARD.get())) {
+            poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
         this.itemRenderer.renderStatic(entity.getItem(), ItemDisplayContext.GROUND,
                 packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
