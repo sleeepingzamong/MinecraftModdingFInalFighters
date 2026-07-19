@@ -1,6 +1,7 @@
 package com.example.examplemod.client;
 
 import com.example.examplemod.ExampleMod;
+import com.example.examplemod.combat.CharacterStats;
 import com.example.examplemod.combat.CharacterType;
 import com.example.examplemod.network.ModMessages;
 import com.example.examplemod.network.SelectCharacterC2SPacket;
@@ -45,7 +46,9 @@ public class CharacterSelectScreen extends Screen {
     }
 
     // 논리 좌표계 (이 크기로 그려놓고 통째로 확대)
-    private static final int LOGICAL_W = 300, LOGICAL_H = 210;
+    private static final int LOGICAL_W = 380, LOGICAL_H = 210;
+    private static final int WHEEL_CX = 110;   // 휠 중심 X (오른쪽은 설명란)
+    private static final int INFO_X = 212;     // 설명란 시작 X (배경 구분선 204 오른쪽)
     private static final int WHEEL_SIZE = 176;
     private static final double R_IN = 24, R_OUT = 86;   // 부채꼴 안/바깥 반지름 (텍스처와 일치)
     private static final int PORTRAIT_R = 52;            // 초상화 중심 반지름
@@ -120,7 +123,7 @@ public class CharacterSelectScreen extends Screen {
         }
 
         double lmx = toLogicalX(mouseX), lmy = toLogicalY(mouseY);
-        int cx = LOGICAL_W / 2, cy = LOGICAL_H / 2;
+        int cx = WHEEL_CX, cy = LOGICAL_H / 2;
         int wheelX = cx - WHEEL_SIZE / 2, wheelY = cy - WHEEL_SIZE / 2;
 
         RenderSystem.enableBlend();
@@ -186,7 +189,21 @@ public class CharacterSelectScreen extends Screen {
         guiGraphics.blit(CENTER, cx - 24, cy - 24, 0, centerHover ? 48 : 0, 48, 48, 48, 96);
         guiGraphics.drawCenteredString(this.font, chars[selectedIndex].getDisplayName(), cx, cy - 4, COL_NAME_SEL);
 
-        guiGraphics.drawCenteredString(this.font, "← → 회전 · Enter 확정", cx, LOGICAL_H - 12, COL_HINT);
+        // 오른쪽 설명란: 선택된 캐릭터 이름·능력치·스킬 설명
+        CharacterType selected = chars[selectedIndex];
+        guiGraphics.drawString(this.font, selected.getDisplayName(), INFO_X, 18, COL_NAME_SEL);
+        int maxHealth = (int) CharacterStats.getMaxHealth(selected);
+        int maxStamina = CharacterStats.getMaxStamina(selected);
+        String staminaText = maxStamina >= 1000 ? "무제한" : String.valueOf(maxStamina);
+        guiGraphics.drawString(this.font, "체력 " + maxHealth, INFO_X, 36, 0xE24B4A);
+        guiGraphics.drawString(this.font, "스태미나 " + staminaText, INFO_X, 48, 0x8FBF4D);
+        int lineY = 68;
+        for (String line : selected.getDescription()) {
+            guiGraphics.drawString(this.font, line, INFO_X, lineY, COL_NAME_IDLE);
+            lineY += 12;
+        }
+
+        guiGraphics.drawCenteredString(this.font, "← → 회전 · Enter 확정", cx, LOGICAL_H - 14, COL_HINT);
 
         guiGraphics.pose().popPose();
         RenderSystem.disableBlend();
@@ -253,7 +270,7 @@ public class CharacterSelectScreen extends Screen {
         if (button == 0) {
             updateLayout();
             double lx = toLogicalX(mouseX), ly = toLogicalY(mouseY);
-            int cx = LOGICAL_W / 2, cy = LOGICAL_H / 2;
+            int cx = WHEEL_CX, cy = LOGICAL_H / 2;
 
             // 가운데 원 클릭 = 확정
             if (distance(lx, ly, cx, cy) <= 22) {
