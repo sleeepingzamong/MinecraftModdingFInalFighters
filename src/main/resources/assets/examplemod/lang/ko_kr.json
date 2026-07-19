@@ -1,0 +1,23 @@
+{
+ "item.examplemod.ruby": "루비",
+  "block.examplemod.ruby_block": "루비 블록",
+  "item.examplemod.character_select_ticket": "선택권",
+  "item.examplemod.ruyi_jingu_bang": "여의봉",
+  "item.examplemod.katana":"일본도",
+  "item.examplemod.budda": "부처",
+  "item.examplemod.knife": "단검",
+  "entity.examplemod.training_dummy": "훈련용 좀비",
+  "item.examplemod.laser": "레이저",
+  "item.examplemod.revolver": "리볼버",
+  "item.examplemod.bullet": "총알",
+  "item.examplemod.card": "카드",
+  "item.examplemod.blackjack": "블랙잭",
+  "item.examplemod.hammer": "해머",
+
+  "key.categories.examplemod": "ExampleMod",
+  "key.examplemod.skill_1": "스킬 1",
+  "key.examplemod.skill_2": "스킬 2",
+  "key.examplemod.ultimate": "궁극기",
+  "key.examplemod.dash": "대쉬",
+  "key.examplemod.guard": "방어"
+}

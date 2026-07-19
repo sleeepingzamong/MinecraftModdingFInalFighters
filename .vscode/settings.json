@@ -1,0 +1,12 @@
+{
+    // 실행/디버그에 쓸 JDK = JetBrains Runtime (강화 핫스왑 지원)
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-17",
+            "path": "D:\\jbr17\\jbrsdk-17.0.14-windows-x64-b1367.22",
+            "default": true
+        }
+    ],
+    // 저장 → 컴파일되면 실행 중인 게임에 자동으로 코드 교체 시도
+    "java.debug.settings.hotCodeReplace": "auto"
+}

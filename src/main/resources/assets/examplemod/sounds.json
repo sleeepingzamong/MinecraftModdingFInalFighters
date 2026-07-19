@@ -1,0 +1,8 @@
+{
+  "laser_charge": {
+    "sounds": ["examplemod:laser_charge"]
+  },
+  "budda": {
+    "sounds": ["examplemod:budda"]
+  }
+}
