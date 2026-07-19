@@ -8,7 +8,11 @@ import com.example.examplemod.combat.GamblerEvents;
 import com.example.examplemod.combat.SkillType;
 import com.example.examplemod.registry.ModEntities;
 import com.example.examplemod.registry.ModItems;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -108,6 +112,35 @@ public class SkillProjectileEntity extends ThrowableItemProjectile {
         }
     }
 
+    // 리볼버 총알 헤드샷: 탄이 대상 눈높이 부근(머리)에 맞았으면 true
+    private boolean isHeadshot(Entity victim) {
+        if (!this.getItem().is(ModItems.BULLET.get())) {
+            return false;   // 헤드샷은 총알만
+        }
+        if (!(victim instanceof LivingEntity living)) {
+            return false;
+        }
+        return this.getY() >= living.getEyeY() - 0.25D;
+    }
+
+    private static final float HEADSHOT_BONUS = 1.5F;   // 헤드샷 추가 데미지
+
+    // 헤드샷 데미지 계산 + 크리티컬 연출 (별 파티클 + 타격음)
+    private float applyHeadshot(Entity victim) {
+        float dealt = this.damage;
+        if (isHeadshot(victim)) {
+            dealt += HEADSHOT_BONUS;
+            if (this.level() instanceof ServerLevel serverLevel && victim instanceof LivingEntity living) {
+                serverLevel.sendParticles(ParticleTypes.CRIT,
+                        living.getX(), living.getEyeY() + 0.2D, living.getZ(),
+                        12, 0.3D, 0.2D, 0.3D, 0.25D);
+                serverLevel.playSound(null, living.getX(), living.getEyeY(), living.getZ(),
+                        SoundEvents.PLAYER_ATTACK_CRIT, SoundSource.PLAYERS, 1.0F, 1.2F);
+            }
+        }
+        return dealt;
+    }
+
     // 도적 표창(X)이면: 던진 사람에게 표식 기록 + 맞은 대상 머리 위에 단검 표시
     private void recordDojukMark(Entity victim) {
         if (this.sourceCharacter != CharacterType.DOJUK || this.sourceSlot != SkillType.SKILL_2) {
@@ -166,7 +199,7 @@ public void tick() {
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(true);
             }
-            e.hurt(this.damageSources().thrown(this, this.getOwner()), this.damage);
+            e.hurt(this.damageSources().thrown(this, this.getOwner()), this.applyHeadshot(e));
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(false);
             }
@@ -215,7 +248,7 @@ protected AABB makeBoundingBox() {
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(true);
             }
-            result.getEntity().hurt(damageSources().thrown(this, getOwner()), this.damage);
+            result.getEntity().hurt(damageSources().thrown(this, getOwner()), this.applyHeadshot(result.getEntity()));
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(false);
             }
