@@ -50,6 +50,7 @@ public class ClientModEvents {
         event.register(ModKeyMappings.ULTIMATE_KEY);
         event.register(ModKeyMappings.DASH_KEY);
         event.register(ModKeyMappings.GUARD_KEY);
+        event.register(ModKeyMappings.CHARACTER_SELECT_KEY);
     }
 
     @SubscribeEvent

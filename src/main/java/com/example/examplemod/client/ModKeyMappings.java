@@ -40,4 +40,10 @@ public class ModKeyMappings {
         GLFW.GLFW_KEY_F,
         CATEGORY
 );
+        public static final KeyMapping CHARACTER_SELECT_KEY = new KeyMapping(
+        "key.examplemod.character_select",
+        InputConstants.Type.KEYSYM,
+        GLFW.GLFW_KEY_K,
+        CATEGORY
+);
 }

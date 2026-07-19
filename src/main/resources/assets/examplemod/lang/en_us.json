@@ -19,5 +19,6 @@
   "key.examplemod.skill_2": "스킬 2",
   "key.examplemod.ultimate": "궁극기",
   "key.examplemod.dash": "대쉬",
-  "key.examplemod.guard": "방어"
+  "key.examplemod.guard": "방어",
+  "key.examplemod.character_select": "Character Select"
 }

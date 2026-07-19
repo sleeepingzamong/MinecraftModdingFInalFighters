@@ -84,6 +84,14 @@ public class ModMessages {
                 HammerSpinS2CPacket::new,
                 HammerSpinS2CPacket::handle
         );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                OpenSelectScreenS2CPacket.class,
+                OpenSelectScreenS2CPacket::encode,
+                OpenSelectScreenS2CPacket::new,
+                OpenSelectScreenS2CPacket::handle
+        );
     }
 
     public static void sendToServer(Object message) {

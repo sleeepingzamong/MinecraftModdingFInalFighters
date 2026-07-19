@@ -48,6 +48,11 @@ public class ClientSkillKeyEvents {
             return;
         }
 
+        // 캐릭터 선택 키: 게임 중 아무 때나 선택창 열기 (선택권 아이템 없이도 가능)
+        while (ModKeyMappings.CHARACTER_SELECT_KEY.consumeClick()) {
+            ClientHooks.openCharacterSelectScreen();
+        }
+
         LocalPlayer dashPlayer = Minecraft.getInstance().player;
 while (ModKeyMappings.DASH_KEY.consumeClick()) {
     if (dashPlayer == null) {
