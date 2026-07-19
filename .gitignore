@@ -20,6 +20,11 @@ build
 # other
 eclipse
 run
+run2
+run-data
+src.zip
+hs_err_*.log
+replay_*.log
 
 # Files from Forge MDK
 forge*changelog.txt
