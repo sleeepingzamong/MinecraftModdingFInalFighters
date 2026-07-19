@@ -8,9 +8,10 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 
 
 import com.example.examplemod.capability.PlayerCombatDataProvider;
+import com.example.examplemod.registry.ModItems;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import java.util.UUID;
-
-import com.example.examplemod.capability.PlayerCombatDataProvider;
 
 public class PlayerCharacterManager {
 
@@ -24,7 +25,49 @@ public class PlayerCharacterManager {
 
          if (player instanceof ServerPlayer serverPlayer) {
         StaminaManager.resetStamina(serverPlayer, characterType);
+        giveCharacterWeapon(serverPlayer, characterType);
     }
+    }
+
+    // 캐릭터별 전용 무기. 무기가 없는 캐릭터(사이보그·해커·가수 등)는 null.
+    // 캐릭터 무기 추가 시 여기 한 줄만 넣으면 선택 시 지급/교체에 자동 반영됨.
+    private static Item getWeapon(CharacterType characterType) {
+        return switch (characterType) {
+            case MONKEY -> ModItems.RUYI_JINGU_BANG.get();
+            case DOJUK -> ModItems.KNIFE.get();
+            case GAMBLER -> ModItems.REVOLVER.get();
+            case SAMURAI -> ModItems.KATANA.get();
+            case HAMMER -> ModItems.HAMMER.get();
+            default -> null;
+        };
+    }
+
+    private static void giveCharacterWeapon(ServerPlayer player, CharacterType characterType) {
+        // 1) 이전 캐릭터의 무기를 인벤토리에서 전부 제거 (캐릭터 변경 시 중복 방지)
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (!stack.isEmpty() && isCharacterWeapon(stack.getItem())) {
+                player.getInventory().setItem(i, ItemStack.EMPTY);
+            }
+        }
+
+        // 2) 새 캐릭터의 무기 지급 (인벤토리가 꽉 찼으면 발밑에 드롭)
+        Item weapon = getWeapon(characterType);
+        if (weapon != null) {
+            ItemStack weaponStack = new ItemStack(weapon);
+            if (!player.getInventory().add(weaponStack)) {
+                player.drop(weaponStack, false);
+            }
+        }
+    }
+
+    private static boolean isCharacterWeapon(Item item) {
+        for (CharacterType type : CharacterType.values()) {
+            if (item == getWeapon(type)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public static CharacterType getCharacter(Player player) {
