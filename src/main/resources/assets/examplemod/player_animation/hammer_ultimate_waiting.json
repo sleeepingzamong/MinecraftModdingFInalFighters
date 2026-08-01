@@ -1,0 +1,58 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"hammer_ultimate_waiting": {
+			"loop": true,
+			"bones": {
+				"torso": {
+					"rotation": {
+						"vector": [22.5, 0, 0]
+					},
+					"position": {
+						"vector": [0, -2, -4]
+					}
+				},
+				"head": {
+					"rotation": {
+						"vector": [5, 0, 0]
+					},
+					"position": {
+						"vector": [0, -2, -4]
+					}
+				},
+				"right_arm": {
+					"rotation": {
+						"vector": [240, 0, 0]
+					},
+					"position": {
+						"vector": [0, -3, -2]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [-39.9527, 37.4266, 35.9608]
+					},
+					"position": {
+						"vector": [-2, -4, -5]
+					}
+				},
+				"right_leg": {
+					"rotation": {
+						"vector": [-25, 0, 0]
+					},
+					"position": {
+						"vector": [0, -1, -1]
+					}
+				},
+				"left_leg": {
+					"rotation": {
+						"vector": [-20, 0, 0]
+					},
+					"position": {
+						"vector": [0, -3, 2]
+					}
+				}
+			}
+		}
+	}
+}

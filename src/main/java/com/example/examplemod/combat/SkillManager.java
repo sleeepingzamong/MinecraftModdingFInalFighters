@@ -24,7 +24,14 @@ public class SkillManager {
             return;   // 룰렛 연출 중엔 스킬 불가
         }
 
-        
+        if (StunManager.isStunned(player)) {
+            player.sendSystemMessage(Component.literal("스턴 상태입니다!"));
+            return;
+        }
+
+        if (HammerUltimateEvents.isCasting(player)) {
+            return;   // 해머 궁 시전 경직 중 — 다른 스킬 불가
+        }
 
         CharacterType characterType = PlayerCharacterManager.getCharacter(player);
         CharacterSkills skills = getSkills(characterType);
@@ -46,8 +53,9 @@ public class SkillManager {
             return;
         }
 
-        // 해머 X는 망치를 들고 있어야 함 (자원 소모 전에 차단)
-        if (characterType == CharacterType.HAMMER && skillType == SkillType.SKILL_2
+        // 해머 Z(투척)·X(회전)는 망치를 들고 있어야 함 (자원 소모 전에 차단)
+        if (characterType == CharacterType.HAMMER
+                && (skillType == SkillType.SKILL_1 || skillType == SkillType.SKILL_2)
                 && !(player.getMainHandItem().getItem() instanceof com.example.examplemod.item.HammerItem)) {
             player.sendSystemMessage(Component.literal("망치를 들어야 합니다."));
             return;
@@ -114,6 +122,14 @@ public class SkillManager {
     if (GuardManager.isGuarding(player)) {
         player.sendSystemMessage(Component.literal("방어 중에는 행동할 수 없습니다."));
         return;
+    }
+
+    if (StunManager.isStunned(player)) {
+        return;   // 스턴 중엔 대쉬 불가
+    }
+
+    if (HammerUltimateEvents.isCasting(player)) {
+        return;   // 해머 궁 시전 경직 중엔 대쉬 불가
     }
 
     if (GamblerEvents.isRouletteLocked(player)) {

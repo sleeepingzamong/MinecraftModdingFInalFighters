@@ -69,11 +69,16 @@ public class SkillProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     protected float getGravity() {
-        return 0.0F;   // 중력 0 → 직선 비행
+        // 해머 투척만 포물선 낙하 (0.03 = 화살보다 완만), 나머지는 직선
+        if (this.getItem().is(ModItems.HAMMER_THROWN.get())) {
+            return 0.03F;
+        }
+        return 0.0F;
     }
 
     public void setMaxDistance(double distance) {
-        this.maxDistanceSqr = distance * distance;
+        // 0 이하 = 사거리 무제한 (그냥 제곱하면 -1이 +1이 되는 함정이 있어서 명시 처리)
+        this.maxDistanceSqr = distance <= 0 ? -1.0 : distance * distance;
         this.startPos = position();   // 발사 지점 기억
     }
 
@@ -141,6 +146,29 @@ public class SkillProjectileEntity extends ThrowableItemProjectile {
         return dealt;
     }
 
+    // 궤적 빛점 1개 전송 — 기본 32칸 거리 제한을 넘겨서 멀리서도 보이게 플레이어별 강제 전송
+    private void sendTrailParticle(ServerLevel level, double x, double y, double z) {
+        for (ServerPlayer viewer : level.players()) {
+            level.sendParticles(viewer, net.minecraft.core.particles.ParticleTypes.END_ROD, true,
+                    x, y, z, 1, 0.02D, 0.02D, 0.02D, 0.0D);
+        }
+    }
+
+    // 해머 투척(Z): 명중 시 스턴 + "땅!" 소리
+    private void recordHammerStun(Entity victim) {
+        if (!this.getItem().is(ModItems.HAMMER_THROWN.get())) {
+            return;
+        }
+        if (victim instanceof LivingEntity living && this.level() instanceof ServerLevel serverLevel) {
+            com.example.examplemod.combat.StunManager.stun(living, com.example.examplemod.combat.HammerSkills.THROW_STUN_TICKS);
+            serverLevel.playSound(null, living.getX(), living.getY(), living.getZ(),
+                    SoundEvents.ANVIL_LAND, SoundSource.PLAYERS, 0.7F, 1.6F);
+            serverLevel.sendParticles(ParticleTypes.CRIT,
+                    living.getX(), living.getEyeY() + 0.3D, living.getZ(),
+                    10, 0.3D, 0.2D, 0.3D, 0.2D);
+        }
+    }
+
     // 도적 표창(X)이면: 던진 사람에게 표식 기록 + 맞은 대상 머리 위에 단검 표시
     private void recordDojukMark(Entity victim) {
         if (this.sourceCharacter != CharacterType.DOJUK || this.sourceSlot != SkillType.SKILL_2) {
@@ -190,6 +218,31 @@ public void tick() {
         return;
     }
 
+    // 해머 투척: 회전하는 "해머 머리"를 따라 빛점을 남김 → 궤적이 나선(뺑글뺑글)으로 그려짐
+    // 회전 각도는 렌더러(SkillProjectileRenderer)의 틱당 -40도와 같은 공식으로 계산
+    if (this.getItem().is(ModItems.HAMMER_THROWN.get()) && this.level() instanceof ServerLevel serverLevel) {
+        // 연출용 과장 값 (B안): 실제 모델 회전(-40)보다 빠르게 돌려서 고리가 확실히 맺히게
+        final double spinDegPerTick = -120.0;  // 궤적 회전 속도 (모델과 독립)
+        final double headRadius = 1.5;         // 고리 반지름 (블록)
+        final double centerYOffset = 0.4;      // 나선 중심 높이 보정
+        final int samplesPerTick = 4;          // 틱당 샘플 수 — 고리가 매끈하게
+
+        Vec3 vel = this.getDeltaMovement();
+        Vec3 forward = new Vec3(vel.x, 0.0, vel.z);
+        forward = forward.lengthSqr() < 1.0E-4 ? new Vec3(1, 0, 0) : forward.normalize();
+
+        for (int i = 0; i < samplesPerTick; i++) {
+            double step = (double) i / samplesPerTick;
+            double sampleTick = this.tickCount - step;
+            double angle = Math.toRadians(sampleTick * spinDegPerTick);
+            Vec3 base = this.position().subtract(vel.scale(step));
+            sendTrailParticle(serverLevel,
+                    base.x + forward.x * Math.sin(angle) * headRadius,
+                    base.y + centerYOffset + Math.cos(angle) * headRadius,
+                    base.z + forward.z * Math.sin(angle) * headRadius);
+        }
+    }
+
     // 히트박스에 닿는 적 직접 판정 (직선 판정만으론 큰 박스가 반영 안 됨)
     for (Entity e : this.level().getEntities(this, this.getBoundingBox(), this::canHitEntity)) {
         if (e instanceof LivingEntity) {
@@ -204,6 +257,7 @@ public void tick() {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(false);
             }
             this.recordGamblerCard(e);   // 총알 데미지가 들어간 뒤 누적/폭발 판정
+            this.recordHammerStun(e);
             this.discard();
             return;
         }
@@ -228,6 +282,12 @@ protected AABB makeBoundingBox() {
     double mulX = 1.0D;
     double mulY = 2.0D;
     double mulZ = 1.8D;
+    // 해머 투척만 판정 보정: 가로 +0.15, 세로 +3.0 (다른 투사체엔 영향 없음)
+    if (this.getItem().is(ModItems.HAMMER_THROWN.get())) {
+        mulX += 0.15D;
+        mulZ += 0.15D;
+        mulY += 3.0D;
+    }
     // ↑↑↑
 
     double hx = base.getXsize() / 2.0D * mulX;
@@ -253,6 +313,7 @@ protected AABB makeBoundingBox() {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(false);
             }
             this.recordGamblerCard(result.getEntity());   // 총알 데미지가 들어간 뒤 누적/폭발 판정
+            this.recordHammerStun(result.getEntity());
         }
     }
 

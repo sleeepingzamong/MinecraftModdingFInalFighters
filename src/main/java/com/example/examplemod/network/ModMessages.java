@@ -92,6 +92,14 @@ public class ModMessages {
                 OpenSelectScreenS2CPacket::new,
                 OpenSelectScreenS2CPacket::handle
         );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                PlayAnimationS2CPacket.class,
+                PlayAnimationS2CPacket::encode,
+                PlayAnimationS2CPacket::new,
+                PlayAnimationS2CPacket::handle
+        );
     }
 
     public static void sendToServer(Object message) {

@@ -24,8 +24,9 @@ public class CharacterStats {
             return 0;   // 궁극기는 전부 쿨타임 없음 (게이지가 제한)
         }
         return switch (characterType) {
-            case MONKEY -> 10;   // z·x 0.5초
-            case CYBORG -> 20;   // z·x 1초
+            case MONKEY -> 10;    // z·x 0.5초
+            case CYBORG -> 20;    // z·x 1초
+            case HAMMER -> skillType == SkillType.SKILL_1 ? 60 : 0;   // Z 투척 3초 (X는 자체 쿨 관리)
             default -> 0;
         };
     }

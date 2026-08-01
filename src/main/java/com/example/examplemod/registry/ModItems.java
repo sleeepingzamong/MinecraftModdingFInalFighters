@@ -54,4 +54,7 @@ public class ModItems {
 
     public static final RegistryObject<Item> HAMMER = ITEMS.register("hammer",
         () -> new HammerItem(new Item.Properties().stacksTo(1)));   // 해머 캐릭터 무기 (아직 스탯 없음)
+
+    public static final RegistryObject<Item> HAMMER_THROWN = ITEMS.register("hammer_thrown",
+        () -> new Item(new Item.Properties()));   // 날아가는 해머 (모델 표시용 — hammer_thrown.json으로 조절)
 }

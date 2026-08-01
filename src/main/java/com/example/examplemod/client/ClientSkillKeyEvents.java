@@ -174,6 +174,11 @@ while (ModKeyMappings.DASH_KEY.consumeClick()) {
         }
     }
 
+    // 궁극기 키를 차징 중인지 (캐릭터별 궁 대기모션 판별용)
+    public static int getUltimateChargeTick() {
+        return ultimateChargeTick;
+    }
+
     // HUD가 차징 진행도를 읽는 통로
     public static int getActiveChargeTick() {
         return Math.max(skill1ChargeTick, Math.max(skill2ChargeTick, ultimateChargeTick));

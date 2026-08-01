@@ -30,6 +30,9 @@ public class PlayerTickHub {
 
         NoHungerEvents.tick(player);   // capability 필요 없음
 
+        StunManager.tick(player, level);          // 범용 스턴 (해머 투척 등)
+        HammerUltimateEvents.tick(player, level); // 해머 궁 균열 (0.5초 지연 발동)
+
         player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
             StaminaRegenEvents.tick(player, data);
             LaserBeamEvents.tick(player, level, data);

@@ -50,6 +50,9 @@ public class PlayerRespawnEvents {
             GuardManager.clear(serverPlayer);
             // 룰렛 연출 중 나가면 돔/무적이 남지 않게 정리
             com.example.examplemod.combat.GamblerEvents.onCasterGone(serverPlayer);
+            // 스턴·해머 궁 시전 상태도 정리
+            com.example.examplemod.combat.StunManager.clear(serverPlayer);
+            com.example.examplemod.combat.HammerUltimateEvents.clear(serverPlayer);
         }
     }
 

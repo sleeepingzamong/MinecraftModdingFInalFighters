@@ -50,6 +50,11 @@ public class SkillProjectileRenderer extends EntityRenderer<SkillProjectileEntit
         if (entity.getItem().is(ModItems.CARD.get())) {
             poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
         }
+        // 해머 투척: 진행 방향 기준 세로로 뺑글뺑글 (앞구르기 회전 — 부호 바꾸면 방향 반전)
+        // 궤적(SkillProjectileEntity)은 연출을 위해 일부러 더 빠른 회전값을 씀 (B안 — 서로 독립)
+        if (entity.getItem().is(ModItems.HAMMER_THROWN.get())) {
+            poseStack.mulPose(Axis.XP.rotationDegrees((entity.tickCount + partialTicks) * -40.0F));
+        }
         this.itemRenderer.renderStatic(entity.getItem(), ItemDisplayContext.GROUND,
                 packedLight, OverlayTexture.NO_OVERLAY, poseStack, buffer, entity.level(), entity.getId());
         poseStack.popPose();

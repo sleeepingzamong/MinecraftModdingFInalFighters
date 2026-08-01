@@ -9,6 +9,9 @@ import net.minecraft.world.phys.Vec3;
 
 public class CommonCombatActions {
 
+    // fireProjectile의 maxDistance에 넣으면 사거리 무제한 (땅·수명으로만 소멸)
+    public static final double UNLIMITED_RANGE = -1.0D;
+
     public static void dash(ServerPlayer player, double dirX, double dirZ) {
     Vec3 direction;
     if (dirX == 0.0 && dirZ == 0.0) {

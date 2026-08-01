@@ -13,6 +13,7 @@
   "item.examplemod.card": "카드",
   "item.examplemod.blackjack": "블랙잭",
   "item.examplemod.hammer": "해머",
+  "item.examplemod.hammer_thrown": "날아가는 해머",
 
   "key.categories.examplemod": "ExampleMod",
   "key.examplemod.skill_1": "스킬 1",

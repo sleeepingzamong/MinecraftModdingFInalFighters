@@ -1,0 +1,10 @@
+{
+	"parent": "examplemod:item/hammer",
+	"display": {
+		"ground": {
+			"rotation": [180, 90, 0],
+			"translation": [0, 0, 0],
+			"scale": [0.8, 1.69, 1.36]
+		}
+	}
+}

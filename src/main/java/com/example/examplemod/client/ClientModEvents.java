@@ -27,9 +27,6 @@ public class ClientModEvents {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         event.enqueueWork(() -> {
-            // 커스텀 팔 자세를 미리 생성 (첫 렌더링 뒤에 만들면 크래시 — HammerPoses 주석 참고)
-            HammerPoses.init();
-
             // 리볼버 "reload" 프로퍼티: 재장전 진행도 0~1 → 모델 overrides가 이 값으로 프레임 선택
             ItemProperties.register(ModItems.REVOLVER.get(),
                     new ResourceLocation(ExampleMod.MODID, "reload"),

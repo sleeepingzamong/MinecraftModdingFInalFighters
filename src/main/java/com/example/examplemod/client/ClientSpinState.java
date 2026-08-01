@@ -11,7 +11,7 @@ import java.util.Map;
 // 렌더링 회전 각도 계산 + 본인일 때 3인칭 강제 전환/복원을 담당
 public class ClientSpinState {
 
-    public static final float DEGREES_PER_TICK = 18F;   // 초당 1바퀴 (360/20)
+    public static final float DEGREES_PER_TICK = 45F;   // 초당 2.5바퀴 (900/20)
 
     private static final Map<Integer, Long> SPINNING = new HashMap<>();   // 엔티티 ID → 시작 게임시각
     private static CameraType prevCamera = null;   // 회전 전에 쓰던 시점 (복원용)
