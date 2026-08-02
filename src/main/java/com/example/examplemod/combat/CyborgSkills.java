@@ -39,6 +39,16 @@ public class CyborgSkills implements CharacterSkills {
 
         SkillManager.castCopiedSkill(player, copied, slot, chargeTick);
 
+        // 도적 X(표창→돌진)는 2단 스킬 — 표창 단계에선 복사를 유지해야
+        // 명중 후 Z 재입력으로 돌진까지 쓸 수 있다. 돌진을 시작한 입력에서만 소모.
+        boolean dojukKnifePhase = copied == CharacterType.DOJUK && slot == SkillType.SKILL_2
+                && player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA)
+                        .map(d -> d.getDojukDashTicks() <= 0)
+                        .orElse(false);
+        if (dojukKnifePhase) {
+            return;   // 복사 유지 (표식 3초 안에 Z 재입력 = 돌진)
+        }
+
         // 소모: 보관함 비우기
         player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
             data.setCopiedCharacter(CharacterType.NONE);

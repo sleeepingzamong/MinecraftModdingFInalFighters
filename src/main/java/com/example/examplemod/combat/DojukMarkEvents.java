@@ -12,6 +12,7 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -148,6 +149,30 @@ public class DojukMarkEvents {
                     }
                 }
             }
+        }
+    }
+
+    // 시전자가 죽거나 나가면 표식 표시·돌진 상태 정리 (머리 위 단검이 영영 남지 않게)
+    public static void clearMark(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return;
+        }
+        player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
+            Entity display = level.getEntity(data.getDojukMarkDisplayId());
+            if (display != null) {
+                display.discard();
+            }
+            data.setDojukMarkDisplayId(-1);
+            data.setDojukMarkTicks(0);
+            data.setDojukMarkTargetId(-1);
+            data.setDojukDashTicks(0);
+        });
+    }
+
+    @SubscribeEvent
+    public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            clearMark(player);
         }
     }
 

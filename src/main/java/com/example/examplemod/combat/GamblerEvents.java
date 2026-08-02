@@ -295,12 +295,15 @@ public class GamblerEvents {
         data.setRouletteTicks(0);
     }
 
-    // 시전자가 죽거나 나가면 연출 강제 정리 (돔/무적이 남지 않게)
+    // 시전자가 죽거나 나가면 연출 강제 정리 (돔/무적/카드 표시가 남지 않게)
     public static void onCasterGone(ServerPlayer player) {
         if (player.level() instanceof ServerLevel level) {
             player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
                 if (data.getRouletteTicks() > 0) {
                     cleanupRoulette(player, level, data);
+                }
+                if (data.getCardTicks() > 0) {
+                    clearCard(level, data);   // 죽으면 카드 데이터가 초기화돼 표시가 영영 남던 버그 방지
                 }
             });
         }

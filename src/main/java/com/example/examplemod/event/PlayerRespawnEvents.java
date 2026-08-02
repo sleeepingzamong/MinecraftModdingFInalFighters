@@ -42,6 +42,8 @@ public class PlayerRespawnEvents {
         PlayerCharacterManager.reapplyCharacterHealth(event.getEntity());
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
             CombatSync.syncStats(serverPlayer);
+            // 죽었다 살아나면 검사 버프·표식은 사라짐
+            com.example.examplemod.combat.SwordsmanEvents.clear(serverPlayer);
         }
     }
     @SubscribeEvent
@@ -50,9 +52,12 @@ public class PlayerRespawnEvents {
             GuardManager.clear(serverPlayer);
             // 룰렛 연출 중 나가면 돔/무적이 남지 않게 정리
             com.example.examplemod.combat.GamblerEvents.onCasterGone(serverPlayer);
-            // 스턴·해머 궁 시전 상태도 정리
+            // 도적 표식 표시도 정리 (표시 엔티티가 남지 않게)
+            com.example.examplemod.combat.DojukMarkEvents.clearMark(serverPlayer);
+            // 스턴·해머 궁·검사 버프 상태도 정리
             com.example.examplemod.combat.StunManager.clear(serverPlayer);
             com.example.examplemod.combat.HammerUltimateEvents.clear(serverPlayer);
+            com.example.examplemod.combat.SwordsmanEvents.clear(serverPlayer);
         }
     }
 
