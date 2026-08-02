@@ -36,8 +36,9 @@ public class PlayerCharacterManager {
             case MONKEY -> ModItems.RUYI_JINGU_BANG.get();
             case DOJUK -> ModItems.KNIFE.get();
             case GAMBLER -> ModItems.REVOLVER.get();
-            case SAMURAI -> ModItems.KATANA.get();
+            case SWORDSMAN -> ModItems.KATANA.get();
             case HAMMER -> ModItems.HAMMER.get();
+            case CYBORG -> ModItems.POWER_KNUCKLE.get();
             default -> null;
         };
     }
@@ -57,6 +58,19 @@ public class PlayerCharacterManager {
             ItemStack weaponStack = new ItemStack(weapon);
             if (!player.getInventory().add(weaponStack)) {
                 player.drop(weaponStack, false);
+            }
+
+            // 사이보그는 양손 — 왼손(오프핸드)에도 너클 장착
+            // (공격 스탯은 오른손에만 적용되므로 데미지가 2배가 되진 않음)
+            if (characterType == CharacterType.CYBORG) {
+                ItemStack prevOffhand = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND);
+                if (!prevOffhand.isEmpty() && !isCharacterWeapon(prevOffhand.getItem())) {
+                    // 원래 왼손에 있던 일반 아이템은 인벤토리로 돌려줌
+                    if (!player.getInventory().add(prevOffhand)) {
+                        player.drop(prevOffhand, false);
+                    }
+                }
+                player.setItemSlot(net.minecraft.world.entity.EquipmentSlot.OFFHAND, new ItemStack(weapon));
             }
         }
     }

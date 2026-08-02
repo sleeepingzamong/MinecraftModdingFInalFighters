@@ -9,7 +9,7 @@ public class SkillManager {
     private static final CharacterSkills CYBORG_SKILLS = new CyborgSkills();
     private static final CharacterSkills DOJUK_SKILLS = new DojukSkills();
     private static final CharacterSkills GAMBLER_SKILLS = new GamblerSkills();
-    private static final CharacterSkills SAMURAI_SKILLS = new SamuraiSkills();
+    private static final CharacterSkills SWORDSMAN_SKILLS = new SwordsmanSkills();
     private static final CharacterSkills HACKER_SKILLS = new HackerSkills();
     private static final CharacterSkills HAMMER_SKILLS = new HammerSkills();
     private static final CharacterSkills SINGER_SKILLS = new SingerSkills();
@@ -191,7 +191,7 @@ public class SkillManager {
             case CYBORG -> CYBORG_SKILLS;
             case DOJUK -> DOJUK_SKILLS;
             case GAMBLER -> GAMBLER_SKILLS;
-            case SAMURAI -> SAMURAI_SKILLS;
+            case SWORDSMAN -> SWORDSMAN_SKILLS;
             case HACKER -> HACKER_SKILLS;
             case HAMMER -> HAMMER_SKILLS;
             case SINGER -> SINGER_SKILLS;

@@ -100,6 +100,22 @@ public class ModMessages {
                 PlayAnimationS2CPacket::new,
                 PlayAnimationS2CPacket::handle
         );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                ParryMarksS2CPacket.class,
+                ParryMarksS2CPacket::encode,
+                ParryMarksS2CPacket::new,
+                ParryMarksS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                PunchC2SPacket.class,
+                PunchC2SPacket::encode,
+                PunchC2SPacket::new,
+                PunchC2SPacket::handle
+        );
     }
 
     public static void sendToServer(Object message) {

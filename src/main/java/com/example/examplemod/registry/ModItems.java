@@ -57,4 +57,7 @@ public class ModItems {
 
     public static final RegistryObject<Item> HAMMER_THROWN = ITEMS.register("hammer_thrown",
         () -> new Item(new Item.Properties()));   // 날아가는 해머 (모델 표시용 — hammer_thrown.json으로 조절)
+
+    public static final RegistryObject<Item> POWER_KNUCKLE = ITEMS.register("power_knuckle",
+        () -> new PowerKnuckleItem(new Item.Properties().stacksTo(1)));   // 사이보그 무기
 }

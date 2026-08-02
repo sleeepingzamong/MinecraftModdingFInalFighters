@@ -25,7 +25,7 @@ public class KatanaItem extends SwordItem {
 
     @Override
     public void appendHoverText(ItemStack itemStack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("사이보그의 전용 무기").withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.literal("검사의 전용 무기").withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.literal("빠른 베기 공격").withStyle(ChatFormatting.GRAY));
         super.appendHoverText(itemStack, level, tooltip, flag);
     }

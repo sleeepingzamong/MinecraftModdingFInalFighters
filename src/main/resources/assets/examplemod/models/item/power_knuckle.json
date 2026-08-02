@@ -1,0 +1,205 @@
+{
+	"format_version": "1.9.0",
+	"credit": "FinalFighters power knuckle - box gauntlet",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "examplemod:item/power_knuckle",
+		"particle": "examplemod:item/power_knuckle"
+	},
+	"elements": [
+		{
+			"name": "메인박스",
+			"from": [3.5, 6, 4.5],
+			"to": [12.5, 13, 11.5],
+			"faces": {
+				"north": {"uv": [12, 4, 16, 8], "texture": "#0"},
+				"east": {"uv": [12, 4, 16, 8], "texture": "#0"},
+				"south": {"uv": [12, 4, 16, 8], "texture": "#0"},
+				"west": {"uv": [12, 4, 16, 8], "texture": "#0"},
+				"up": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "정면플레이트",
+			"from": [3, 13, 4],
+			"to": [13, 14, 12],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [0, 0, 8, 8], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "모서리캡1",
+			"from": [3, 14, 4],
+			"to": [5.2, 14.7, 6.2],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "모서리캡2",
+			"from": [10.8, 14, 4],
+			"to": [13, 14.7, 6.2],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "모서리캡3",
+			"from": [3, 14, 9.8],
+			"to": [5.2, 14.7, 12],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "모서리캡4",
+			"from": [10.8, 14, 9.8],
+			"to": [13, 14.7, 12],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "중앙코어",
+			"from": [6.9, 14, 6.9],
+			"to": [9.1, 14.9, 9.1],
+			"faces": {
+				"north": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"east": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"south": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"west": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"up": {"uv": [4, 8, 8, 12], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "세그먼트띠1",
+			"from": [3.2, 7.8, 4.2],
+			"to": [12.8, 8.8, 11.8],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 8, 12, 12], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "세그먼트띠2",
+			"from": [3.2, 10.2, 4.2],
+			"to": [12.8, 11.2, 11.8],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [8, 8, 12, 12], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "손목커프",
+			"from": [4.5, 3.5, 5.5],
+			"to": [11.5, 6, 10.5],
+			"faces": {
+				"north": {"uv": [0, 8, 4, 12], "texture": "#0"},
+				"east": {"uv": [0, 8, 4, 12], "texture": "#0"},
+				"south": {"uv": [0, 8, 4, 12], "texture": "#0"},
+				"west": {"uv": [0, 8, 4, 12], "texture": "#0"},
+				"up": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"down": {"uv": [8, 8, 12, 12], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [-90, 0, 0],
+			"translation": [0, -1.75, 0],
+			"scale": [0.75, 0.75, 0.75]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [-90, 0, 0],
+			"translation": [0, -1.75, 0],
+			"scale": [0.75, 0.75, 0.75]
+		},
+		"firstperson_righthand": {
+			"rotation": [-80, -10, 8],
+			"translation": [3.5, -0.75, 2.25],
+			"scale": [0.9, 0.9, 0.9]
+		},
+		"firstperson_lefthand": {
+			"rotation": [-80, 10, -8],
+			"translation": [2.5, -0.75, 2.5],
+			"scale": [0.9, 0.9, 0.9]
+		},
+		"ground": {
+			"translation": [0, 3, 0],
+			"scale": [0.45, 0.45, 0.45]
+		},
+		"gui": {
+			"rotation": [-30, 35, 0],
+			"scale": [0.75, 0.75, 0.75]
+		},
+		"fixed": {
+			"rotation": [-90, 0, 0],
+			"scale": [0.7, 0.7, 0.7]
+		}
+	},
+	"groups": [
+		{
+			"name": "메인박스",
+			"origin": [8, 8, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [0]
+		},
+		{
+			"name": "정면",
+			"origin": [8, 8, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [1, 2, 3, 4, 5, 6]
+		},
+		{
+			"name": "세그먼트",
+			"origin": [8, 8, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [7, 8]
+		},
+		{
+			"name": "손목",
+			"origin": [8, 8, 8],
+			"scope": 0,
+			"color": 0,
+			"children": [9]
+		}
+	]
+}
