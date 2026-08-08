@@ -109,12 +109,14 @@ public class SkillManager {
             }
         }
 
-        // 시전 성공 → 쿨타임 시작
+        // 시전 성공 → 쿨타임 시작 (+ HUD 카운트다운용으로 클라에 알림)
         int cooldown = CharacterStats.getSkillCooldown(characterType, skillType);
         if (cooldown > 0) {
             final long readyAt = now + cooldown;
             player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA)
                     .ifPresent(data -> data.setSkillReadyTick(skillType, readyAt));
+            com.example.examplemod.network.ModMessages.sendToPlayer(
+                    new com.example.examplemod.network.CooldownS2CPacket(skillType, cooldown), player);
         }
     }
 

@@ -25,7 +25,7 @@ import org.joml.Matrix4f;
 public class ParryMarkRenderEvents {
 
     private static final ResourceLocation MARK_TEX =
-            new ResourceLocation(ExampleMod.MODID, "textures/entity/parry_mark.png");
+            new ResourceLocation(ExampleMod.MODID, "textures/gui/samurai_x.png");   // 사용자가 그린 교차 검 표식
     private static final int FULL_BRIGHT = 0xF000F0;   // 어두워도 잘 보이게 최대 밝기
 
     private static final float ICON_SIZE = 10.0F;      // 아이콘 크기 (이름표 글자 기준 px)

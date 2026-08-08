@@ -24,10 +24,14 @@ public class CombatHudOverlay {
     private static final ResourceLocation COIN_DEFAULT = new ResourceLocation("examplemod", "textures/gui/coin_default.png");
     private static final ResourceLocation COIN_SEVEN = new ResourceLocation("examplemod", "textures/gui/coin_seven.png");
     private static final ResourceLocation COIN_SKULL = new ResourceLocation("examplemod", "textures/gui/coin_skull.png");
+    private static final ResourceLocation PARRY_MARK_HUD = new ResourceLocation("examplemod", "textures/gui/samurai_x.png");
     // 스킬 프로필 경로 캐시 (skillId별 한 번만 생성)
     private static final Map<String, ResourceLocation> PROFILE_CACHE = new HashMap<>();
     // 프로필 PNG 존재 여부 캐시 — 매 프레임 파일 조회 방지 (PNG를 새로 넣으면 게임 재시작 필요)
     private static final Map<String, Boolean> PROFILE_EXISTS = new HashMap<>();
+    // 스킬 쿨타임 HUD 아이콘 캐시 (캐릭터_슬롯별, 예: hammer_z)
+    private static final Map<String, ResourceLocation> ICON_CACHE = new HashMap<>();
+    private static final Map<String, Boolean> ICON_EXISTS = new HashMap<>();
 
     public static final IGuiOverlay HUD =
             (ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int width, int height) -> {
@@ -107,11 +111,76 @@ public class CombatHudOverlay {
             }
         }
 
-        // ===== 오른쪽 위: 다음 탄환 데미지 (리볼버를 들었을 때만) =====
+        // ===== 검사 전용: 남은 패링 표식 (코인과 같은 자리) — 표식이 있을 때만 표시 =====
+        if ("SWORDSMAN".equals(ClientCombatData.getCharacter())) {
+            int marks = ClientParryMarks.get(mc.player.getId());
+            if (marks > 0) {
+                int markSize = 16;            // 표식 표시 크기 (px)
+                int markGap = 2;              // 표식 사이 간격
+                int markX = width / 2 + 4;    // 핫바 오른쪽 (코인 자리와 동일)
+                int markY = height - 46;      // 코인 자리보다 4px 아래
+                for (int i = 0; i < marks; i++) {
+                    guiGraphics.blit(PARRY_MARK_HUD, markX + i * (markSize + markGap), markY,
+                            markSize, markSize, 0, 0, 32, 32, 32, 32);
+                }
+            }
+        }
+
+        // ===== 오른쪽 위: 스킬 쿨타임 HUD (Z / X / 궁 아이콘) =====
+        String hudChar = ClientCombatData.getCharacter();
+        if (hudChar != null && !hudChar.isEmpty() && !"NONE".equals(hudChar)) {
+            String charLower = hudChar.toLowerCase(java.util.Locale.ROOT);
+            String[] slotKeys = {"z", "x", "ult"};
+            String[] slotLabels = {"Z", "X", "궁"};
+            com.example.examplemod.combat.SkillType[] slotTypes = {
+                    com.example.examplemod.combat.SkillType.SKILL_1,
+                    com.example.examplemod.combat.SkillType.SKILL_2,
+                    com.example.examplemod.combat.SkillType.ULTIMATE};
+            int iconSize = 20, iconGap = 4;
+            int rowX = width - 3 * iconSize - 2 * iconGap - 8;
+            int rowY = 8;
+
+            for (int i = 0; i < 3; i++) {
+                int x = rowX + i * (iconSize + iconGap);
+                String iconId = charLower + "_" + slotKeys[i];
+                ResourceLocation icon = ICON_CACHE.computeIfAbsent(iconId,
+                        k -> new ResourceLocation("examplemod", "textures/gui/skill/" + k + ".png"));
+                boolean iconExists = ICON_EXISTS.computeIfAbsent(iconId,
+                        k -> mc.getResourceManager().getResource(icon).isPresent());
+
+                // 배경 판
+                guiGraphics.fill(x - 1, rowY - 1, x + iconSize + 1, rowY + iconSize + 1, 0x90000000);
+                if (iconExists) {
+                    guiGraphics.blit(icon, x, rowY, iconSize, iconSize, 0, 0, 32, 32, 32, 32);
+                }
+
+                if (slotTypes[i] == com.example.examplemod.combat.SkillType.ULTIMATE) {
+                    // 궁: 게이지가 다 찰 때까지 어둡게
+                    if (ClientCombatData.getUltimateGauge() < 100) {
+                        guiGraphics.fill(x, rowY, x + iconSize, rowY + iconSize, 0xA0101010);
+                    }
+                } else {
+                    int remain = ClientSkillCooldowns.getRemaining(slotTypes[i]);
+                    if (remain > 0) {
+                        // 쿨타임: 위에서부터 걷히는 어두운 덮개 + 남은 초
+                        int total = Math.max(1, ClientSkillCooldowns.getTotal(slotTypes[i]));
+                        int coverH = (int) Math.ceil(iconSize * (remain / (float) total));
+                        guiGraphics.fill(x, rowY, x + iconSize, rowY + coverH, 0xB0101010);
+                        String sec = String.valueOf((int) Math.ceil(remain / 20.0));
+                        guiGraphics.drawCenteredString(mc.font, sec, x + iconSize / 2, rowY + 6, 0xFFD700);
+                    }
+                }
+
+                // 키 라벨
+                guiGraphics.drawCenteredString(mc.font, slotLabels[i], x + iconSize / 2, rowY + iconSize + 3, 0xB0B0B0);
+            }
+        }
+
+        // ===== 오른쪽 위: 다음 탄환 데미지 (리볼버를 들었을 때만) — 스킬 아이콘 줄 아래 =====
         if (mc.player.getMainHandItem().getItem() instanceof RevolverItem) {
             String txt = "다음 탄환: " + ClientCombatData.getNextGunDamage();
             int tw = mc.font.width(txt);
-            guiGraphics.drawString(mc.font, txt, width - tw - 10, 10, 0xFFD700);
+            guiGraphics.drawString(mc.font, txt, width - tw - 10, 42, 0xFFD700);
         }
 
         // 차징 진행 바 (경험치바 자리, 노란색) — 차징 중에만 표시
