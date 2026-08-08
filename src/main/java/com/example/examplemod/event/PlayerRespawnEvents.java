@@ -58,6 +58,7 @@ public class PlayerRespawnEvents {
             com.example.examplemod.combat.StunManager.clear(serverPlayer);
             com.example.examplemod.combat.HammerUltimateEvents.clear(serverPlayer);
             com.example.examplemod.combat.SwordsmanEvents.clear(serverPlayer);
+            com.example.examplemod.combat.HackerEvents.clear(serverPlayer);
         }
     }
 

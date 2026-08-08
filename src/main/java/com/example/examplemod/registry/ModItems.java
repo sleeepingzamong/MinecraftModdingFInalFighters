@@ -60,4 +60,7 @@ public class ModItems {
 
     public static final RegistryObject<Item> POWER_KNUCKLE = ITEMS.register("power_knuckle",
         () -> new PowerKnuckleItem(new Item.Properties().stacksTo(1)));   // 사이보그 무기
+
+    public static final RegistryObject<Item> CYBER_KNIFE = ITEMS.register("cyber_knife",
+        () -> new CyberKnifeItem(new Item.Properties().stacksTo(1)));   // 해커 무기
 }

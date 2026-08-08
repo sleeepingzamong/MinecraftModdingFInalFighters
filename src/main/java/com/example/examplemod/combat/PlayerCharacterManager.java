@@ -39,6 +39,7 @@ public class PlayerCharacterManager {
             case SWORDSMAN -> ModItems.KATANA.get();
             case HAMMER -> ModItems.HAMMER.get();
             case CYBORG -> ModItems.POWER_KNUCKLE.get();
+            case HACKER -> ModItems.CYBER_KNIFE.get();
             default -> null;
         };
     }

@@ -33,6 +33,10 @@ public class StunManager {
     }
 
     public static void stun(LivingEntity target, int ticks, boolean breakable) {
+        // 해커 X "버그 무시" 중엔 스턴이 아예 안 걸림
+        if (target instanceof ServerPlayer sp && HackerEvents.isBugIgnoring(sp)) {
+            return;
+        }
         long until = target.level().getGameTime() + ticks;
         if (target instanceof ServerPlayer player) {
             STUNNED_UNTIL.merge(player.getUUID(), until, Math::max);

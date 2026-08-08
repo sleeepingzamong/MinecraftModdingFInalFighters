@@ -116,6 +116,30 @@ public class ModMessages {
                 PunchC2SPacket::new,
                 PunchC2SPacket::handle
         );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                SystemHackS2CPacket.class,
+                SystemHackS2CPacket::encode,
+                SystemHackS2CPacket::new,
+                SystemHackS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                BugIgnoreS2CPacket.class,
+                BugIgnoreS2CPacket::encode,
+                BugIgnoreS2CPacket::new,
+                BugIgnoreS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                CooldownS2CPacket.class,
+                CooldownS2CPacket::encode,
+                CooldownS2CPacket::new,
+                CooldownS2CPacket::handle
+        );
     }
 
     public static void sendToServer(Object message) {

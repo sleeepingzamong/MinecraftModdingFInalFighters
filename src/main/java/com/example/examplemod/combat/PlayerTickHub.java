@@ -33,6 +33,7 @@ public class PlayerTickHub {
         StunManager.tick(player, level);          // 범용 스턴 (해머 투척 등)
         HammerUltimateEvents.tick(player, level); // 해머 궁 균열 (0.5초 지연 발동)
         SwordsmanEvents.tick(player, level);      // 검사 연격 추가타 + 궁 강화 만료
+        HackerEvents.tick(player, level);         // 해커 위치 기록·글리치 잔상·해킹 만료
 
         player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
             StaminaRegenEvents.tick(player, data);

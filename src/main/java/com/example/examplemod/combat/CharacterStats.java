@@ -28,6 +28,7 @@ public class CharacterStats {
             case CYBORG -> 20;    // z·x 1초
             case HAMMER -> skillType == SkillType.SKILL_1 ? 60 : 0;   // Z 투척 3초 (X는 자체 쿨 관리)
             case SWORDSMAN -> skillType == SkillType.SKILL_1 ? 60 : 160;   // Z 연격 3초, X 패링 8초
+            case HACKER -> skillType == SkillType.SKILL_1 ? 100 : 160;     // Z 롤백 5초, X 버그무시 8초
             default -> 0;
         };
     }
