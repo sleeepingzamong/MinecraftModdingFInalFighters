@@ -20,6 +20,7 @@ import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
 import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -89,6 +90,23 @@ public class CloneEntity extends PathfinderMob {
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));                     // 맞으면 반격
         // 주변 적대 몹(Monster)을 자동으로 노린다. mustSee = true.
         this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, true));
+    }
+
+    // 소환자는 절대 공격 대상이 되지 않음 — 실수로 분신을 때려도(HurtByTargetGoal) 반격 안 함
+    @Override
+    public void setTarget(@Nullable LivingEntity target) {
+        if (target != null && target.getUUID().equals(this.getOwnerUUID())) {
+            return;
+        }
+        super.setTarget(target);
+    }
+
+    @Override
+    public boolean canAttack(LivingEntity target) {
+        if (target.getUUID().equals(this.getOwnerUUID())) {
+            return false;
+        }
+        return super.canAttack(target);
     }
 
     @Override

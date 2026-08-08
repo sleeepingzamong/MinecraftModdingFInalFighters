@@ -26,6 +26,8 @@ public class ModCommands {
     public static void onRegisterCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(build("characterselect"));
         event.getDispatcher().register(build("캐릭터선택창"));
+        // 바닐라 1.20.2의 /random 재현 (value·roll·reset — 표시는 액션바)
+        event.getDispatcher().register(RandomCommand.build());
     }
 
     private static LiteralArgumentBuilder<CommandSourceStack> build(String name) {

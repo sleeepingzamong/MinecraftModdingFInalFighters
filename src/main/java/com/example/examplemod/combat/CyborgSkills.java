@@ -77,9 +77,11 @@ public class CyborgSkills implements CharacterSkills {
         // 클라이언트 렌더러가 스킨을 찾는 데 쓰는 소환자 UUID (서버에서 미리 set, sync됨).
         clone.setOwnerUUID(player.getUUID());
 
-        // 손에 카타나 쥐여주기 (죽어도 안 떨구게 드롭 확률 0)
-        clone.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.KATANA.get()));
+        // 양손에 파워 너클 장착 — 본체와 같은 무기 (죽어도 안 떨구게 드롭 확률 0)
+        clone.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.POWER_KNUCKLE.get()));
         clone.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
+        clone.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(ModItems.POWER_KNUCKLE.get()));
+        clone.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
 
         level.addFreshEntity(clone);
 
