@@ -29,7 +29,7 @@ public class RuyiJinguBangItem extends SwordItem {
     private final Multimap<Attribute, AttributeModifier> customAttributes;
 
     public RuyiJinguBangItem(Properties properties) {
-        super(Tiers.WOOD, 4, -2.8F, properties);   // 공격력 5 (0+4+1), 공격속도 1.2회/초 (제일 느림, 대신 사거리 김)
+        super(Tiers.WOOD, 5, -2.8F, properties);   // 공격력 6 (0+5+1), 공격속도 1.2회/초 — DPS 7.2, 대신 사거리 최장
 
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
 

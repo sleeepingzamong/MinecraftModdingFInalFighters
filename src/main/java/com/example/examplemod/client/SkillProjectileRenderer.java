@@ -42,8 +42,11 @@ public class SkillProjectileRenderer extends EntityRenderer<SkillProjectileEntit
         poseStack.mulPose(Axis.YP.rotationDegrees(YAW_OFFSET));
         poseStack.mulPose(Axis.XP.rotationDegrees(PITCH_OFFSET));
         poseStack.mulPose(Axis.ZP.rotationDegrees(ROLL_OFFSET));
-        // 단검·총알은 모델이 세로라 90도 눕혀서 (끝이 앞을 보게)
-        if (entity.getItem().is(ModItems.KNIFE.get()) || entity.getItem().is(ModItems.BULLET.get())) {
+        // 단검·총알·여의봉·불꽃 깃털은 모델이 세로라 90도 눕혀서 (끝이 앞을 보게)
+        // 깃털은 이렇게 눕히면 깃대 쪽 윗면이 하늘을 향함
+        if (entity.getItem().is(ModItems.KNIFE.get()) || entity.getItem().is(ModItems.BULLET.get())
+                || entity.getItem().is(ModItems.RUYI_JINGU_BANG.get())
+                || entity.getItem().is(ModItems.PHOENIX_FEATHER.get())) {
             poseStack.mulPose(Axis.XP.rotationDegrees(-90.0F));
         }
         // 카드는 반대 방향으로 눕혀서 앞면이 땅을 보게

@@ -19,6 +19,10 @@ public class ModParticles {
     public static final RegistryObject<SimpleParticleType> SKULL =
             PARTICLE_TYPES.register("skull", () -> new SimpleParticleType(true));
 
+    // 광전사 분노 불꽃 (궁 광폭화 연출)
+    public static final RegistryObject<SimpleParticleType> RAGE =
+            PARTICLE_TYPES.register("rage", () -> new SimpleParticleType(true));
+
     public static void register(IEventBus eventBus) {
         PARTICLE_TYPES.register(eventBus);
     }

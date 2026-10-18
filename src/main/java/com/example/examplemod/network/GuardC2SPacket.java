@@ -29,7 +29,11 @@ public class GuardC2SPacket {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
 
-            if (player != null) {
+            if (player != null && !player.isSpectator()) {   // 관전 중 방어 불가
+                // 스턴 중엔 가드를 켤 수 없음 (끄는 건 언제나 허용)
+                if (guarding && com.example.examplemod.combat.StunManager.isStunned(player)) {
+                    return;
+                }
                 GuardManager.setGuarding(player, guarding);
             }
         });

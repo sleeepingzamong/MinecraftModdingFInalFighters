@@ -1,0 +1,26 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"run_scythe": {
+			"loop": true,
+			"bones": {
+				"right_arm": {
+					"rotation": {
+						"vector": [17.61, 19.11, 7.11]
+					},
+					"position": {
+						"vector": [0, 0, -6]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [-28.35, 50.44, 32.52]
+					},
+					"position": {
+						"vector": [0, 0, -6]
+					}
+				}
+			}
+		}
+	}
+}

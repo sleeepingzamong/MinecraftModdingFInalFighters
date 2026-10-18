@@ -12,6 +12,17 @@ import net.minecraft.world.phys.Vec3;
 
 public class GamblerSkills implements CharacterSkills {
 
+    // 궁 시전 가능 여부 (SkillManager가 게이지 소모 전에 확인 — 헛방으로 게이지가 날아가지 않게)
+    public static boolean canStartRoulette(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        boolean busy = player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA)
+                .map(d -> d.getRouletteTicks() > 0)
+                .orElse(false);
+        return !busy && findLookTarget(player, level, 8.0) != null;
+    }
+
     // 빈 코인 슬롯이 있는지 (SkillManager가 자원 소모 전에 확인)
     public static boolean hasEmptyCoinSlot(ServerPlayer player) {
         return player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA)
@@ -39,8 +50,15 @@ public class GamblerSkills implements CharacterSkills {
 
             CoinType result = player.getRandom().nextBoolean() ? CoinType.SEVEN : CoinType.SKULL;
             data.setCoin(slot, result, GamblerEvents.COIN_TICKS);
+            GamblerEvents.syncCoinEffects(player, data);   // 오른쪽 위 효과 아이콘 갱신
         });
         CombatSync.syncStats(player);   // HUD 코인 이미지 갱신
+
+        // 동전 튕기는 소리 (주변에도 들림, 피치 약간 랜덤)
+        player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                com.example.examplemod.registry.ModSounds.COIN_TOSS.get(),
+                net.minecraft.sounds.SoundSource.PLAYERS,
+                0.8F, 0.95F + player.getRandom().nextFloat() * 0.1F);
     }
 
     @Override
@@ -68,9 +86,9 @@ public class GamblerSkills implements CharacterSkills {
 
         LivingEntity target = findLookTarget(player, level, 8.0);
         if (target == null) {
+            // SkillManager가 미리 막지만 만약을 위해 — 게이지 전액 환불
             player.sendSystemMessage(Component.literal("대상이 없습니다."));
-            StaminaManager.recoverStamina(player, 1);        // 헛방이면 자원 환불
-            UltimateGaugeManager.addGauge(player, 1);
+            UltimateGaugeManager.addGauge(player, UltimateGaugeManager.MAX_GAUGE);
             return;
         }
 
@@ -86,7 +104,7 @@ public class GamblerSkills implements CharacterSkills {
         LivingEntity target = null;
         double bestProj = range;
         for (LivingEntity e : level.getEntitiesOfClass(LivingEntity.class, box,
-                x -> x != player && x.isAlive())) {
+                x -> x != player && x.isAlive() && !x.isAlliedTo(player))) {   // 같은 팀은 룰렛 대상 제외
             Vec3 c = e.getBoundingBox().getCenter();
             double proj = c.subtract(eye).dot(look);
             if (proj < 0 || proj > range) {

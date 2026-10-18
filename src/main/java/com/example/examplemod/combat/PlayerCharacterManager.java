@@ -26,6 +26,13 @@ public class PlayerCharacterManager {
          if (player instanceof ServerPlayer serverPlayer) {
         StaminaManager.resetStamina(serverPlayer, characterType);
         giveCharacterWeapon(serverPlayer, characterType);
+        giveCharacterArmor(serverPlayer, characterType);
+
+        // 해커: 선택 직후 롤백(Z) 못 쓰게 쿨타임부터 시작 (위치 기록이 쌓일 시간)
+        if (characterType == CharacterType.HACKER) {
+            SkillManager.applyCooldown(serverPlayer, SkillType.SKILL_1,
+                    CharacterStats.getSkillCooldown(CharacterType.HACKER, SkillType.SKILL_1));
+        }
     }
     }
 
@@ -39,7 +46,9 @@ public class PlayerCharacterManager {
             case SWORDSMAN -> ModItems.KATANA.get();
             case HAMMER -> ModItems.HAMMER.get();
             case CYBORG -> ModItems.POWER_KNUCKLE.get();
-            case HACKER -> ModItems.CYBER_KNIFE.get();
+            case HACKER -> ModItems.CYBER_SCYTHE.get();
+            case BERSERKER -> ModItems.BATTLE_AXE.get();
+            case PHOENIX -> ModItems.FEATHER_FAN.get();
             default -> null;
         };
     }
@@ -82,7 +91,81 @@ public class PlayerCharacterManager {
                 return true;
             }
         }
-        return false;
+        // 은퇴한 예전 캐릭터 무기 — 인벤토리에 남아 있으면 캐릭터를 바꿀 때 같이 회수
+        return item == ModItems.FIRE_BLADE.get();
+    }
+
+    // 캐릭터별 전용 장비 (장신구/방어구). 부위는 아이템 자체(ArmorItem.Type)가 안다.
+    private static Item getArmor(CharacterType characterType) {
+        return switch (characterType) {
+            case MONKEY -> ModItems.MONKEY_CIRCLET.get();
+            case GAMBLER -> ModItems.GAMBLER_FEDORA.get();
+            case SWORDSMAN -> ModItems.SWORDSMAN_CREST.get();
+            case HACKER -> ModItems.HACKER_GOGGLES.get();
+            case HAMMER -> ModItems.HAMMER_MASK.get();
+            case CYBORG -> ModItems.CYBORG_CHESTPLATE.get();
+            case BERSERKER -> ModItems.BERSERKER_PELT.get();
+            case DOJUK -> ModItems.DOJUK_HOODIE.get();
+            case PHOENIX -> ModItems.PHOENIX_WINGS.get();
+            default -> null;
+        };
+    }
+
+    private static void giveCharacterArmor(ServerPlayer player, CharacterType characterType) {
+        // 1) 이전 캐릭터의 전용 장비 전부 제거 (인벤토리 + 장비 슬롯 — containerSize가 갑옷칸 포함)
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (!stack.isEmpty() && stack.getItem() instanceof com.example.examplemod.item.CharacterArmorItem) {
+                player.getInventory().setItem(i, ItemStack.EMPTY);
+            }
+        }
+
+        // 2) 새 캐릭터의 장비 착용 (원래 그 부위에 있던 일반 아이템은 인벤토리로)
+        Item armor = getArmor(characterType);
+        if (armor instanceof net.minecraft.world.item.ArmorItem armorItem) {
+            net.minecraft.world.entity.EquipmentSlot slot = armorItem.getType().getSlot();
+            ItemStack prev = player.getItemBySlot(slot);
+            if (!prev.isEmpty() && !(prev.getItem() instanceof com.example.examplemod.item.CharacterArmorItem)) {
+                if (!player.getInventory().add(prev)) {
+                    player.drop(prev, false);
+                }
+            }
+            player.setItemSlot(slot, new ItemStack(armor));
+        }
+    }
+
+    // 전용 장비 강제 유지: 벗거나 옮겼으면 회수 후 재착용 (CharacterArmorEvents가 주기 호출)
+    // + 복사본 청소: 착용 슬롯의 정품 1개 외의 전용 장비는 전부 삭제 (상자 등으로 복제해도 무용지물)
+    public static void ensureCharacterArmor(ServerPlayer player) {
+        CharacterType characterType = getCharacter(player);
+        Item armor = getArmor(characterType);
+        net.minecraft.world.entity.EquipmentSlot slot = null;
+        if (armor instanceof net.minecraft.world.item.ArmorItem armorItem) {
+            slot = armorItem.getType().getSlot();
+            if (!player.getItemBySlot(slot).is(armor)) {
+                giveCharacterArmor(player, characterType);
+            }
+        }
+
+        // 인벤토리 전체에서 "착용 슬롯의 본인 캐릭터 장비" 외의 전용 장비를 제거
+        // (갑옷 슬롯 인덱스 = 36 + slot.getIndex())
+        int allowedIndex = slot == null ? -1 : 36 + slot.getIndex();
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack stack = player.getInventory().getItem(i);
+            if (stack.isEmpty() || !(stack.getItem() instanceof com.example.examplemod.item.CharacterArmorItem)) {
+                continue;
+            }
+            if (i == allowedIndex && armor != null && stack.is(armor)) {
+                continue;   // 정품 착용본만 허용
+            }
+            player.getInventory().setItem(i, ItemStack.EMPTY);
+        }
+
+        // 마우스 커서에 잡고 있는 것까지 청소 — 재착용 타이밍에 낚아채는 복제 방지
+        if (player.containerMenu.getCarried().getItem()
+                instanceof com.example.examplemod.item.CharacterArmorItem) {
+            player.containerMenu.setCarried(ItemStack.EMPTY);
+        }
     }
 
     public static CharacterType getCharacter(Player player) {
@@ -94,6 +177,24 @@ public class PlayerCharacterManager {
     public static void reapplyCharacterHealth(Player player) {
          applyCharacterHealth(player, getCharacter(player));
      }
+
+    // 접속 시 속성 방어력만 현재 수치로 재정렬 (체력·회복은 건드리지 않음 — 재접속 풀피 악용 방지)
+    // 구버전에서 속성 +2로 저장된 불사조가 날개(+2)와 중복되는 것 정리용
+    public static void reconcileBonusArmor(Player player) {
+        AttributeInstance armorAttribute = player.getAttribute(Attributes.ARMOR);
+        if (armorAttribute == null) {
+            return;
+        }
+        armorAttribute.removeModifier(CHARACTER_ARMOR_MODIFIER_UUID);
+        double bonusArmor = CharacterStats.getBonusArmor(getCharacter(player));
+        if (bonusArmor != 0) {
+            armorAttribute.addPermanentModifier(new AttributeModifier(
+                    CHARACTER_ARMOR_MODIFIER_UUID,
+                    "Character armor bonus",
+                    bonusArmor,
+                    AttributeModifier.Operation.ADDITION));
+        }
+    }
 
     private static void applyCharacterHealth(Player player, CharacterType characterType) {
     AttributeInstance maxHealthAttribute = player.getAttribute(Attributes.MAX_HEALTH);
@@ -119,6 +220,23 @@ public class PlayerCharacterManager {
         maxHealthAttribute.addPermanentModifier(modifier);
     }
 
+    // 캐릭터 고유 방어력 (전용 방어구가 없는 캐릭터용 — 불사조 2 등)
+    AttributeInstance armorAttribute = player.getAttribute(Attributes.ARMOR);
+    if (armorAttribute != null) {
+        armorAttribute.removeModifier(CHARACTER_ARMOR_MODIFIER_UUID);
+        double bonusArmor = CharacterStats.getBonusArmor(characterType);
+        if (bonusArmor != 0) {
+            armorAttribute.addPermanentModifier(new AttributeModifier(
+                    CHARACTER_ARMOR_MODIFIER_UUID,
+                    "Character armor bonus",
+                    bonusArmor,
+                    AttributeModifier.Operation.ADDITION));
+        }
+    }
+
     player.setHealth((float) player.getMaxHealth());
     }
+
+    private static final java.util.UUID CHARACTER_ARMOR_MODIFIER_UUID =
+            java.util.UUID.fromString("9f2e6a1b-3c4d-4e5f-8a7b-777777777771");
 }

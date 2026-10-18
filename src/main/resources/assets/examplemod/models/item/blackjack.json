@@ -3,8 +3,8 @@
 	"credit": "Made with Blockbench",
 	"texture_size": [32, 32],
 	"textures": {
-		"0": "examplemod:item/blackjack",
-		"particle": "examplemod:item/blackjack"
+		"0": "examplemod:item/card_face",
+		"particle": "examplemod:item/card_face"
 	},
 	"elements": [
 		{

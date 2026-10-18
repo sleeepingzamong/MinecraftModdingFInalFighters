@@ -44,6 +44,8 @@ public class PlayerRespawnEvents {
             CombatSync.syncStats(serverPlayer);
             // 죽었다 살아나면 검사 버프·표식은 사라짐
             com.example.examplemod.combat.SwordsmanEvents.clear(serverPlayer);
+            // 전용 장비 재착용 (사망 드롭은 CharacterArmorEvents가 막음)
+            PlayerCharacterManager.ensureCharacterArmor(serverPlayer);
         }
     }
     @SubscribeEvent
@@ -59,6 +61,7 @@ public class PlayerRespawnEvents {
             com.example.examplemod.combat.HammerUltimateEvents.clear(serverPlayer);
             com.example.examplemod.combat.SwordsmanEvents.clear(serverPlayer);
             com.example.examplemod.combat.HackerEvents.clear(serverPlayer);
+            com.example.examplemod.combat.BerserkerEvents.clear(serverPlayer);
         }
     }
 
@@ -66,6 +69,7 @@ public class PlayerRespawnEvents {
     @SubscribeEvent
     public static void onPlayerLoggedIn(PlayerEvent.PlayerLoggedInEvent event) {
         if (event.getEntity() instanceof ServerPlayer serverPlayer) {
+            PlayerCharacterManager.reconcileBonusArmor(serverPlayer);   // 구버전 잔존 속성 방어력 정리
             CombatSync.syncStats(serverPlayer);
         }
     }

@@ -34,6 +34,9 @@ public class SnowballStunEvents {
         if (!(entityHit.getEntity() instanceof ServerPlayer target)) {
             return;   // 플레이어만 스턴
         }
+        if (snowball.getOwner() != null && target.isAlliedTo(snowball.getOwner())) {
+            return;   // 같은 팀 눈덩이는 스턴 없음
+        }
 
         StunManager.stun(target, STUN_TICKS);
 

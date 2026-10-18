@@ -1,0 +1,358 @@
+{
+	"format_version": "1.9.0",
+	"credit": "FinalFighters cyber scythe - data reaper v3",
+	"texture_size": [32, 32],
+	"textures": {
+		"0": "examplemod:item/cyber_scythe",
+		"particle": "examplemod:item/cyber_scythe"
+	},
+	"elements": [
+		{
+			"name": "자루",
+			"from": [7, -10, 7],
+			"to": [9, 21.5, 9],
+			"faces": {
+				"north": {"uv": [0, 0, 4, 4], "texture": "#0"},
+				"east": {"uv": [0, 0, 4, 4], "texture": "#0"},
+				"south": {"uv": [0, 0, 4, 4], "texture": "#0"},
+				"west": {"uv": [0, 0, 4, 4], "texture": "#0"},
+				"up": {"uv": [0, 4, 4, 8], "texture": "#0"},
+				"down": {"uv": [0, 4, 4, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "케이블",
+			"from": [9, -8, 7.5],
+			"to": [9.6, 20, 8.5],
+			"faces": {
+				"north": {"uv": [0, 14, 4, 16], "texture": "#0"},
+				"east": {"uv": [0, 14, 4, 16], "texture": "#0"},
+				"south": {"uv": [0, 14, 4, 16], "texture": "#0"},
+				"west": {"uv": [0, 14, 4, 16], "texture": "#0"},
+				"up": {"uv": [0, 14, 4, 16], "texture": "#0"},
+				"down": {"uv": [0, 14, 4, 16], "texture": "#0"}
+			}
+		},
+		{
+			"name": "콘솔모듈",
+			"from": [5.6, 8, 6.6],
+			"to": [7, 12.5, 9.4],
+			"faces": {
+				"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"east": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"south": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"west": {"uv": [4, 8, 8, 12], "texture": "#0"},
+				"up": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"down": {"uv": [8, 0, 12, 4], "texture": "#0"}
+			}
+		},
+		{
+			"name": "그립링1",
+			"from": [6.6, 15, 6.6],
+			"to": [9.4, 17, 9.4],
+			"faces": {
+				"north": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"east": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"south": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"west": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"up": {"uv": [12, 6, 16, 8], "texture": "#0"},
+				"down": {"uv": [12, 6, 16, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "그립링2",
+			"from": [6.6, 2, 6.6],
+			"to": [9.4, 4, 9.4],
+			"faces": {
+				"north": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"east": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"south": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"west": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"up": {"uv": [12, 6, 16, 8], "texture": "#0"},
+				"down": {"uv": [12, 6, 16, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "그립링3",
+			"from": [6.6, -4, 6.6],
+			"to": [9.4, -2, 9.4],
+			"faces": {
+				"north": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"east": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"south": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"west": {"uv": [12, 4, 16, 6], "texture": "#0"},
+				"up": {"uv": [12, 6, 16, 8], "texture": "#0"},
+				"down": {"uv": [12, 6, 16, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "하단글로우캡",
+			"from": [6.2, -13.5, 6.2],
+			"to": [9.8, -10, 9.8],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"down": {"uv": [12, 0, 16, 4], "texture": "#0"}
+			}
+		},
+		{
+			"name": "하단스파이크",
+			"from": [7.1, -16, 7.1],
+			"to": [8.9, -13.5, 8.9],
+			"faces": {
+				"north": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"east": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"south": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"west": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"up": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"down": {"uv": [0, 12, 4, 14], "texture": "#0"}
+			}
+		},
+		{
+			"name": "마운트",
+			"from": [6, 21, 6],
+			"to": [10, 26.5, 10],
+			"faces": {
+				"north": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"east": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"south": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"west": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"up": {"uv": [8, 0, 12, 4], "texture": "#0"},
+				"down": {"uv": [8, 0, 12, 4], "texture": "#0"}
+			}
+		},
+		{
+			"name": "벤트앞",
+			"from": [6.8, 22, 5.75],
+			"to": [9.2, 23.2, 6.0],
+			"faces": {
+				"north": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"east": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"south": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"west": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"up": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"down": {"uv": [8, 4, 12, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "벤트뒤",
+			"from": [6.8, 22, 10.0],
+			"to": [9.2, 23.2, 10.25],
+			"faces": {
+				"north": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"east": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"south": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"west": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"up": {"uv": [8, 4, 12, 8], "texture": "#0"},
+				"down": {"uv": [8, 4, 12, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "안테나",
+			"from": [7.2, 26.5, 7.2],
+			"to": [8.8, 29.5, 8.8],
+			"faces": {
+				"north": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"east": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"south": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"west": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"up": {"uv": [12, 0, 16, 4], "texture": "#0"},
+				"down": {"uv": [12, 0, 16, 4], "texture": "#0"}
+			}
+		},
+		{
+			"name": "안테나팁",
+			"from": [7.5, 29.5, 7.5],
+			"to": [8.5, 30.5, 8.5],
+			"faces": {
+				"north": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"east": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"south": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"west": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"up": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"down": {"uv": [0, 12, 4, 14], "texture": "#0"}
+			}
+		},
+		{
+			"name": "백바브",
+			"from": [10, 22.3, 7.5],
+			"to": [13.2, 24.3, 8.5],
+			"faces": {
+				"north": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"east": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"south": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"west": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"up": {"uv": [4, 4, 8, 6], "texture": "#0"},
+				"down": {"uv": [4, 6, 8, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "백바브팁",
+			"from": [12.2, 24.3, 7.6],
+			"to": [13.4, 26.5, 8.4],
+			"faces": {
+				"north": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"east": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"south": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"west": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"up": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"down": {"uv": [0, 12, 4, 14], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날뿌리",
+			"from": [-1, 20.5, 7.4],
+			"to": [6, 26, 8.6],
+			"faces": {
+				"north": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"east": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"south": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"west": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"up": {"uv": [4, 4, 8, 6], "texture": "#0"},
+				"down": {"uv": [4, 6, 8, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날뿌리엣지",
+			"from": [-1, 19.6, 7.5],
+			"to": [6, 20.5, 8.5],
+			"faces": {
+				"north": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"east": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"south": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"west": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"up": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"down": {"uv": [0, 10, 4, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날2",
+			"from": [-8, 21, 7.5],
+			"to": [-0.6, 25.5, 8.5],
+			"rotation": {"angle": 22.5, "axis": "z", "origin": [-0.6, 23.5, 8]},
+			"faces": {
+				"north": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"east": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"south": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"west": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"up": {"uv": [4, 4, 8, 6], "texture": "#0"},
+				"down": {"uv": [4, 6, 8, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날2엣지",
+			"from": [-8, 20.1, 7.55],
+			"to": [-0.6, 21, 8.45],
+			"rotation": {"angle": 22.5, "axis": "z", "origin": [-0.6, 23.5, 8]},
+			"faces": {
+				"north": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"east": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"south": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"west": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"up": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"down": {"uv": [0, 10, 4, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날3",
+			"from": [-13.5, 18.8, 7.6],
+			"to": [-7.6, 22, 8.4],
+			"rotation": {"angle": 45, "axis": "z", "origin": [-7.6, 20.5, 8]},
+			"faces": {
+				"north": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"east": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"south": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"west": {"uv": [4, 0, 8, 4], "texture": "#0"},
+				"up": {"uv": [4, 4, 8, 6], "texture": "#0"},
+				"down": {"uv": [4, 6, 8, 8], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날3엣지",
+			"from": [-13.5, 18, 7.65],
+			"to": [-7.6, 18.8, 8.35],
+			"rotation": {"angle": 45, "axis": "z", "origin": [-7.6, 20.5, 8]},
+			"faces": {
+				"north": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"east": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"south": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"west": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"up": {"uv": [0, 8, 4, 10], "texture": "#0"},
+				"down": {"uv": [0, 10, 4, 12], "texture": "#0"}
+			}
+		},
+		{
+			"name": "날팁",
+			"from": [-16, 18.0, 7.7],
+			"to": [-13.2, 20.0, 8.3],
+			"rotation": {"angle": 45, "axis": "z", "origin": [-7.6, 20.5, 8]},
+			"faces": {
+				"north": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"east": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"south": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"west": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"up": {"uv": [0, 12, 4, 14], "texture": "#0"},
+				"down": {"uv": [0, 12, 4, 14], "texture": "#0"}
+			}
+		}
+	],
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [0, -90, 3],
+			"translation": [0, 2.5, 1],
+			"scale": [0.8, 0.8, 0.8]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [0, 90, -55],
+			"translation": [0, 2.5, 1],
+			"scale": [0.8, 0.8, 0.8]
+		},
+		"firstperson_righthand": {
+			"rotation": [0, -90, 25],
+			"translation": [1.5, 1, 1],
+			"scale": [0.55, 0.55, 0.55]
+		},
+		"firstperson_lefthand": {
+			"rotation": [0, 90, -25],
+			"translation": [-1.5, 1, 1],
+			"scale": [0.55, 0.55, 0.55]
+		},
+		"ground": {
+			"translation": [0, 3, 0],
+			"scale": [0.32, 0.32, 0.32]
+		},
+		"gui": {
+			"rotation": [30, -135, 0],
+			"translation": [1, -1, 0],
+			"scale": [0.32, 0.32, 0.32]
+		},
+		"fixed": {
+			"rotation": [0, -180, 0],
+			"translation": [0, -1, 0],
+			"scale": [0.45, 0.45, 0.45]
+		}
+	},
+	"groups": [
+		{
+			"name": "자루",
+			"origin": [8, 8, 8],
+			"color": 0,
+			"children": [0, 1, 2, 3, 4, 5, 6, 7]
+		},
+		{
+			"name": "머리",
+			"origin": [8, 8, 8],
+			"color": 0,
+			"children": [8, 9, 10, 11, 12, 13, 14]
+		},
+		{
+			"name": "날",
+			"origin": [8, 8, 8],
+			"color": 0,
+			"children": [15, 16, 17, 18, 19, 20, 21]
+		}
+	]
+}

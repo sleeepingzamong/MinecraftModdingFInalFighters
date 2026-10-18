@@ -117,6 +117,32 @@ public class SkillProjectileEntity extends ThrowableItemProjectile {
         }
     }
 
+    // 지난 틱 위치~현재 위치 사이를 촘촘히 채움 → 빠르게 날아도 끊기지 않는 불꽃 선
+    private void spawnFeatherTrail() {
+        double dx = this.getX() - this.xo;
+        double dy = this.getY() - this.yo;
+        double dz = this.getZ() - this.zo;
+        for (int i = 0; i < 4; i++) {
+            double t = i / 4.0;
+            this.level().addParticle(ParticleTypes.FLAME,
+                    this.xo + dx * t, this.yo + dy * t, this.zo + dz * t, 0.0, 0.01, 0.0);
+        }
+        if (this.random.nextInt(3) == 0) {
+            this.level().addParticle(ParticleTypes.SMALL_FLAME,
+                    this.getX(), this.getY(), this.getZ(),
+                    (this.random.nextDouble() - 0.5) * 0.04, 0.03, (this.random.nextDouble() - 0.5) * 0.04);
+        }
+    }
+
+    // 불사조 깃털(Z): 명중 시 화상 (아이템 종류로 식별)
+    private void recordPhoenixBurn(Entity victim) {
+        if (this.getItem().is(ModItems.PHOENIX_FEATHER.get())
+                && victim instanceof LivingEntity living
+                && this.getOwner() instanceof ServerPlayer shooter) {
+            com.example.examplemod.combat.PhoenixEvents.applyBurn(shooter, living);
+        }
+    }
+
     // 리볼버 총알 헤드샷: 탄이 대상 눈높이 부근(머리)에 맞았으면 true
     private boolean isHeadshot(Entity victim) {
         if (!this.getItem().is(ModItems.BULLET.get())) {
@@ -125,10 +151,10 @@ public class SkillProjectileEntity extends ThrowableItemProjectile {
         if (!(victim instanceof LivingEntity living)) {
             return false;
         }
-        return this.getY() >= living.getEyeY() - 0.25D;
+        return this.getY() >= living.getEyeY() - 0.1D;
     }
 
-    private static final float HEADSHOT_BONUS = 1.5F;   // 헤드샷 추가 데미지
+    private static final float HEADSHOT_BONUS = 1.0F;   // 헤드샷 추가 데미지
 
     // 헤드샷 데미지 계산 + 크리티컬 연출 (별 파티클 + 타격음)
     private float applyHeadshot(Entity victim) {
@@ -214,6 +240,11 @@ public class SkillProjectileEntity extends ThrowableItemProjectile {
     @Override
 public void tick() {
     super.tick();
+    // 불사조 깃털(Z): 불꽃 꼬리는 각 클라가 직접 그림 (패킷 없음). 처음 2틱은 쏜 사람 눈앞이라 생략
+    if (this.level().isClientSide && this.isAlive() && this.tickCount > 2
+            && this.getItem().is(ModItems.PHOENIX_FEATHER.get())) {
+        spawnFeatherTrail();
+    }
     if (this.level().isClientSide || !this.isAlive()) {
         return;
     }
@@ -243,6 +274,30 @@ public void tick() {
         }
     }
 
+    // 원숭이 궁 "여래신장" 부처: 금빛 기운 — 노란 이펙트 여러 개가 주위를 감쌈
+    if (this.getItem().is(ModItems.BUDDA.get()) && this.level() instanceof ServerLevel serverLevel) {
+        final net.minecraft.core.particles.DustParticleOptions GOLD_DUST =
+                new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(1.0F, 0.85F, 0.2F), 1.6F);
+
+        // 1) 주위를 도는 금빛 점 3개 (공전 오라)
+        for (int i = 0; i < 3; i++) {
+            double angle = Math.toRadians(this.tickCount * 25.0 + i * 120.0);
+            serverLevel.sendParticles(GOLD_DUST,
+                    this.getX() + Math.cos(angle) * 0.9,
+                    this.getY() + 0.4 + Math.sin(this.tickCount * 0.3 + i * 2.0) * 0.3,
+                    this.getZ() + Math.sin(angle) * 0.9,
+                    1, 0, 0, 0, 0);
+        }
+        // 2) 몸 주변에 퍼지는 노란 잔광
+        serverLevel.sendParticles(GOLD_DUST,
+                this.getX(), this.getY() + 0.4, this.getZ(), 4, 0.5, 0.5, 0.5, 0.02);
+        // 3) 금빛 불꽃 반짝 (2틱마다)
+        if (this.tickCount % 2 == 0) {
+            serverLevel.sendParticles(net.minecraft.core.particles.ParticleTypes.FLAME,
+                    this.getX(), this.getY() + 0.4, this.getZ(), 2, 0.3, 0.3, 0.3, 0.01);
+        }
+    }
+
     // 히트박스에 닿는 적 직접 판정 (직선 판정만으론 큰 박스가 반영 안 됨)
     for (Entity e : this.level().getEntities(this, this.getBoundingBox(), this::canHitEntity)) {
         if (e instanceof LivingEntity) {
@@ -252,12 +307,20 @@ public void tick() {
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(true);
             }
-            e.hurt(this.damageSources().thrown(this, this.getOwner()), this.applyHeadshot(e));
+            // 데미지 0짜리 연출용 투사체는 타격 처리 건너뜀
+            if (this.damage > 0) {
+                float dealt = this.applyHeadshot(e);
+                com.example.examplemod.combat.FloatingDamageNumbers.bulletHeadshot =
+                        this.getItem().is(ModItems.BULLET.get()) && this.isHeadshot(e);
+                e.hurt(this.damageSources().thrown(this, this.getOwner()), dealt);
+                com.example.examplemod.combat.FloatingDamageNumbers.bulletHeadshot = false;
+            }
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(false);
             }
             this.recordGamblerCard(e);   // 총알 데미지가 들어간 뒤 누적/폭발 판정
             this.recordHammerStun(e);
+            this.recordPhoenixBurn(e);
             this.discard();
             return;
         }
@@ -298,6 +361,15 @@ protected AABB makeBoundingBox() {
     return scaled.move(0.0D, -0.5D, 0.3D);   // 오프셋 (지금 쓰던 값 유지)
 }
 
+    // 같은 팀(스코어보드)은 명중 대상에서 제외 — 아군은 투사체가 그냥 통과 (스턴·표식·데미지 전부 안 붙음)
+    @Override
+    protected boolean canHitEntity(Entity entity) {
+        if (this.getOwner() != null && entity.isAlliedTo(this.getOwner())) {
+            return false;
+        }
+        return super.canHitEntity(entity);
+    }
+
     @Override
     protected void onHitEntity(EntityHitResult result) {
         super.onHitEntity(result);
@@ -308,12 +380,21 @@ protected AABB makeBoundingBox() {
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(true);
             }
-            result.getEntity().hurt(damageSources().thrown(this, getOwner()), this.applyHeadshot(result.getEntity()));
+            // 데미지 0짜리 연출용 투사체(손오공 여의봉 등)는 타격 처리 자체를 건너뜀 (무적틱·경직도 없음)
+            if (this.damage > 0) {
+                float dealt = this.applyHeadshot(result.getEntity());
+                // 팝업 색상용 헤드샷 플래그 (숫자 자체는 FloatingDamageNumbers가 전 피해 공통으로 띄움)
+                com.example.examplemod.combat.FloatingDamageNumbers.bulletHeadshot =
+                        this.getItem().is(ModItems.BULLET.get()) && this.isHeadshot(result.getEntity());
+                result.getEntity().hurt(damageSources().thrown(this, getOwner()), dealt);
+                com.example.examplemod.combat.FloatingDamageNumbers.bulletHeadshot = false;
+            }
             if (ultDamage) {
                 com.example.examplemod.combat.UltimateGaugeEvents.setUltimateDamage(false);
             }
             this.recordGamblerCard(result.getEntity());   // 총알 데미지가 들어간 뒤 누적/폭발 판정
             this.recordHammerStun(result.getEntity());
+            this.recordPhoenixBurn(result.getEntity());
         }
     }
 

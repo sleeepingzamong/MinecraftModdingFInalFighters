@@ -31,7 +31,7 @@ public class DashC2SPacket {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player != null) {
+            if (player != null && !player.isSpectator()) {   // 관전 중 대쉬 불가
                 SkillManager.useDash(player, dirX, dirZ);
             }
         });

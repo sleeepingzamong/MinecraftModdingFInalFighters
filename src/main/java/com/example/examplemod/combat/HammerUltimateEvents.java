@@ -112,7 +112,7 @@ public class HammerUltimateEvents {
         // 스턴을 먼저 걸면 균열 데미지 자체가 "공격당함"으로 집계돼 즉시 깨어남)
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class,
                 player.getBoundingBox().inflate(RANGE, 2.0, RANGE))) {
-            if (target == player || !target.isAlive()) {
+            if (target == player || !target.isAlive() || target.isAlliedTo(player)) {
                 continue;
             }
             Vec3 to = target.position().subtract(player.position());

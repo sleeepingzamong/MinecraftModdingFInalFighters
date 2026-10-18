@@ -1,0 +1,26 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"run_lower": {
+			"loop": true,
+			"bones": {
+				"right_arm": {
+					"rotation": {
+						"vector": [-36.72, -19.03, -15.38]
+					},
+					"position": {
+						"vector": [0, -4, -3]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [-69.78, 33.27, -16.05]
+					},
+					"position": {
+						"vector": [0, -4, -3]
+					}
+				}
+			}
+		}
+	}
+}

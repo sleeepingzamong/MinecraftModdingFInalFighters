@@ -53,6 +53,13 @@ public class PlayerAnimations {
     private static final boolean USE_CUSTOM_LOCOMOTION = false;
     private static final ResourceLocation LOCO_LAYER = new ResourceLocation(ExampleMod.MODID, "locomotion_layer");
 
+    // 양손 무기(BC 대기 자세 보유) 달리기 보정: BC 자세가 AO 달리기와 겹치면 팔이 위로 붕 뜨므로,
+    // 달리는 동안만 무기별 "달리기 팔 자세"를 BC보다 높은 우선순위로 덮어씌운다
+    private static final ResourceLocation RUN_LOWER_LAYER = new ResourceLocation(ExampleMod.MODID, "run_lower_layer");
+    private static final ResourceLocation RUN_LOWER_ANIM = new ResourceLocation(ExampleMod.MODID, "run_lower");     // 해머·도끼 (내려 잡기)
+    private static final ResourceLocation RUN_SCYTHE_ANIM = new ResourceLocation(ExampleMod.MODID, "run_scythe");   // 낫 (대기 자세 그대로)
+    private static final ResourceLocation RUN_KATANA_ANIM = new ResourceLocation(ExampleMod.MODID, "run_katana");   // 카타나 (대기 자세 + 아래·앞)
+
     // 궁 시전 중 무릎 굽힘 키프레임 {틱, 각도} — 블록벤치의 종아리(_down) 키프레임에서 옮김
     private static final float[][] HAMMER_ULT_BEND_RIGHT = {
             {0F, 15F}, {10F, -2.5F}, {15F, 112.2F}, {21.67F, -4.89F}, {26.67F, -4.89F}
@@ -118,6 +125,8 @@ public class PlayerAnimations {
                             return layer;
                         });
                 PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(
+                        RUN_LOWER_LAYER, 5000, player -> new ModifierLayer<>());   // BC 자세(~2000)보다 위
+                PlayerAnimationFactory.ANIMATION_DATA_FACTORY.registerFactory(
                         LOCO_LAYER, 38, player -> {
                             // 이동 모션 (맨 밑에 깔림) + 관절 굽힘 — 트랙은 걷기/뛰기 전환 시 틱에서 교체
                             ModifierLayer<IAnimation> layer = new ModifierLayer<>();
@@ -176,6 +185,30 @@ public class PlayerAnimations {
             }
         }
 
+        // 플레이어별 현재 적용 중인 달리기 팔 자세 (없으면 미적용)
+        private static final java.util.Map<Integer, ResourceLocation> RUN_POSE_ACTIVE = new java.util.HashMap<>();
+
+        // 무기별 달리기 팔 자세 (BC 대기 자세가 있는 무기만) — null이면 보정 없음
+        private static ResourceLocation runPoseFor(net.minecraft.world.item.ItemStack stack) {
+            if (stack.getItem() instanceof com.example.examplemod.item.HammerItem
+                    || stack.getItem() instanceof com.example.examplemod.item.BattleAxeItem) {
+                return RUN_LOWER_ANIM;
+            }
+            if (stack.getItem() instanceof com.example.examplemod.item.CyberScytheItem) {
+                return RUN_SCYTHE_ANIM;
+            }
+            if (stack.getItem() instanceof com.example.examplemod.item.KatanaItem) {
+                return RUN_KATANA_ANIM;
+            }
+            return null;
+        }
+
+        // 달리기 자세 전환용 짧은 페이드 (전환이 튀지 않게)
+        private static dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier runPoseFade() {
+            return dev.kosmx.playerAnim.api.layered.modifier.AbstractFadeModifier.standardFadeIn(
+                    5, dev.kosmx.playerAnim.core.util.Ease.INOUTSINE);
+        }
+
         // 서버 지시로 1회성 시전 모션 재생 (본인 + 상대 화면 모두)
         @SuppressWarnings("unchecked")
         public static void playCastAnimationOnLayer(AbstractClientPlayer clientPlayer, ResourceLocation animKey) {
@@ -186,7 +219,16 @@ public class PlayerAnimations {
             }
             KeyframeAnimation anim = PlayerAnimationRegistry.getAnimation(animKey);
             if (anim != null) {
-                layer.setAnimation(new KeyframeAnimationPlayer(anim));   // 비루프라 끝나면 자동 종료
+                KeyframeAnimationPlayer animPlayer = new KeyframeAnimationPlayer(anim);   // 비루프라 끝나면 자동 종료
+                // 1인칭에서도 모션이 보이게 — 본인 화면에 팔·아이템을 3인칭 모델로 렌더
+                animPlayer.setFirstPersonMode(dev.kosmx.playerAnim.api.firstPerson.FirstPersonMode.THIRD_PERSON_MODEL);
+                animPlayer.setFirstPersonConfiguration(
+                        new dev.kosmx.playerAnim.api.firstPerson.FirstPersonConfiguration()
+                                .setShowRightArm(true)
+                                .setShowLeftArm(true)
+                                .setShowRightItem(true)
+                                .setShowLeftItem(true));
+                layer.setAnimation(animPlayer);
             }
         }
 
@@ -202,6 +244,7 @@ public class PlayerAnimations {
             }
             if (Minecraft.getInstance().level == null) {
                 LOCO_STATE.clear();
+                RUN_POSE_ACTIVE.clear();
                 return;
             }
 
@@ -219,6 +262,30 @@ public class PlayerAnimations {
                         }
                     } else if (!spinning && active) {
                         spinLayer.setAnimation(null);
+                    }
+                }
+
+                // ===== 양손 무기 달리기: 무기별 달리기 팔 자세로 BC 대기 자세 덮어쓰기 =====
+                ModifierLayer<IAnimation> runLowerLayer = (ModifierLayer<IAnimation>)
+                        PlayerAnimationAccess.getPlayerAssociatedData(clientPlayer).get(RUN_LOWER_LAYER);
+                if (runLowerLayer != null) {
+                    // 회전 베기 중엔 달리기 팔 자세를 적용하지 않음 (회전 자세를 덮어써서 모델이 망가짐)
+                    ResourceLocation wantedPose = clientPlayer.isSprinting()
+                            && !ClientSpinState.isSpinning(clientPlayer)
+                            ? runPoseFor(clientPlayer.getMainHandItem()) : null;
+                    ResourceLocation activePose = RUN_POSE_ACTIVE.get(clientPlayer.getId());
+                    if (!java.util.Objects.equals(wantedPose, activePose)) {
+                        if (wantedPose == null) {
+                            RUN_POSE_ACTIVE.remove(clientPlayer.getId());
+                            runLowerLayer.replaceAnimationWithFade(runPoseFade(), null);
+                        } else {
+                            KeyframeAnimation anim = PlayerAnimationRegistry.getAnimation(wantedPose);
+                            if (anim != null) {
+                                RUN_POSE_ACTIVE.put(clientPlayer.getId(), wantedPose);
+                                runLowerLayer.replaceAnimationWithFade(runPoseFade(),
+                                        new KeyframeAnimationPlayer(anim));
+                            }
+                        }
                     }
                 }
 

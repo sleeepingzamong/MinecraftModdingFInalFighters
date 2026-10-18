@@ -27,7 +27,7 @@ public class PowerKnuckleItem extends SwordItem {
     private final Multimap<Attribute, AttributeModifier> customAttributes;
 
     public PowerKnuckleItem(Properties properties) {
-        super(Tiers.IRON, 2, -3.0F, properties);   // 공격력 6 (2+3+1), 공격속도 1.0회/초 — 느리고 묵직한 스트레이트
+        super(Tiers.IRON, 0, -2.0F, properties);   // 공격력 3 (1+2+0), 공격속도 2.0회/초 — 빠른 교대 연타
 
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
         builder.putAll(super.getDefaultAttributeModifiers(EquipmentSlot.MAINHAND));
@@ -37,7 +37,7 @@ public class PowerKnuckleItem extends SwordItem {
                 new AttributeModifier(
                         REACH_MODIFIER_UUID,
                         "Power knuckle reach",
-                        0.0D,   // 기본 사거리 3.0 (일본도·단검과 동일) — 여기 숫자로 가감 조절
+                        0.0D,   // 평타 사거리는 BC weapon_attributes(fist 3.5)가 담당
                         AttributeModifier.Operation.ADDITION
                 )
         );
@@ -61,7 +61,7 @@ public class PowerKnuckleItem extends SwordItem {
     @Override
     public void appendHoverText(ItemStack itemStack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("사이보그의 전용 무기").withStyle(ChatFormatting.AQUA));
-        tooltip.add(Component.literal("좌클릭 잽 · 우클릭 스트레이트").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("양손 교대 연타").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("묵직한 강철 주먹").withStyle(ChatFormatting.DARK_GRAY));
         super.appendHoverText(itemStack, level, tooltip, flag);
     }

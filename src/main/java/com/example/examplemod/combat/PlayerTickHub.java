@@ -31,9 +31,13 @@ public class PlayerTickHub {
         NoHungerEvents.tick(player);   // capability 필요 없음
 
         StunManager.tick(player, level);          // 범용 스턴 (해머 투척 등)
+        LowHealthEvents.tick(player, level);      // 빈사 상태 발밑 핏방울
+        HealthRegenEvents.tick(player, level);    // 커스텀 재생 (초당 1, 피격 후 3.5초 정지)
         HammerUltimateEvents.tick(player, level); // 해머 궁 균열 (0.5초 지연 발동)
         SwordsmanEvents.tick(player, level);      // 검사 연격 추가타 + 궁 강화 만료
         HackerEvents.tick(player, level);         // 해커 위치 기록·글리치 잔상·해킹 만료
+        BerserkerEvents.tick(player, level);      // 광전사 돌진·격노/광폭화 만료
+        PhoenixEvents.tick(player, level);        // 불사조 X 착지 감지·부활 대기 표시
 
         player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
             StaminaRegenEvents.tick(player, data);

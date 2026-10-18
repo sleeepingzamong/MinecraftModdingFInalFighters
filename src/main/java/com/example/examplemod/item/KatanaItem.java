@@ -14,8 +14,8 @@ import java.util.List;
 public class KatanaItem extends SwordItem {
 
     public KatanaItem(Properties properties) {
-        // 철 등급, 공격력 +3, 공격속도 2.4회/초 (단검 3.6과 여의봉 1.2의 중간)
-        super(Tiers.IRON, 3, -1.6F, properties);
+        // 공격력 5 (0+4+1), 공격속도 1.4회/초 — DPS 7.0, 연격·패링 보유 듀얼리스트
+        super(Tiers.WOOD, 4, -2.6F, properties);
     }
 
     @Override

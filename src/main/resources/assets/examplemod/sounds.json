@@ -1,8 +1,54 @@
 {
-  "laser_charge": {
-    "sounds": ["examplemod:laser_charge"]
-  },
-  "budda": {
-    "sounds": ["examplemod:budda"]
-  }
+  "laser_charge": { "sounds": ["examplemod:laser_charge"] },
+  "revolver_shot": { "sounds": ["examplemod:revolver_shot"] },
+  "coin_toss": { "sounds": ["examplemod:coin_toss"] },
+  "hack_ambience": { "sounds": ["examplemod:hack_ambience"] },
+  "budda": { "sounds": ["examplemod:budda"] },
+
+  "monkey_attack": { "sounds": ["examplemod:skill/monkey_attack"] },
+  "monkey_z": { "sounds": ["examplemod:skill/monkey_z"] },
+  "monkey_x": { "sounds": ["examplemod:skill/monkey_x"] },
+  "monkey_ult": { "sounds": ["examplemod:skill/monkey_ult"] },
+
+  "cyborg_attack": { "sounds": ["examplemod:skill/cyborg_attack"] },
+  "cyborg_z": { "sounds": ["examplemod:skill/cyborg_z"] },
+  "cyborg_x": { "sounds": ["examplemod:skill/cyborg_x"] },
+  "cyborg_ult": { "sounds": ["examplemod:skill/cyborg_ult"] },
+
+  "dojuk_attack": { "sounds": ["examplemod:skill/dojuk_attack"] },
+  "dojuk_z": { "sounds": ["examplemod:skill/dojuk_z"] },
+  "dojuk_x": { "sounds": ["examplemod:skill/dojuk_x"] },
+  "dojuk_ult": { "sounds": ["examplemod:skill/dojuk_ult"] },
+
+  "gambler_attack": { "sounds": ["examplemod:skill/gambler_attack"] },
+  "gambler_z": { "sounds": ["examplemod:skill/gambler_z"] },
+  "gambler_x": { "sounds": ["examplemod:skill/gambler_x"] },
+  "gambler_ult": { "sounds": ["examplemod:skill/gambler_ult"] },
+
+  "swordsman_attack": { "sounds": ["examplemod:skill/swordsman_attack"] },
+  "swordsman_z": { "sounds": ["examplemod:skill/swordsman_z"] },
+  "swordsman_x": { "sounds": ["examplemod:skill/swordsman_x"] },
+  "swordsman_ult": { "sounds": ["examplemod:skill/swordsman_ult"] },
+
+  "hacker_attack": { "sounds": ["examplemod:skill/hacker_attack"] },
+  "hacker_z": { "sounds": ["examplemod:skill/hacker_z"] },
+  "hacker_x": { "sounds": ["examplemod:skill/hacker_x"] },
+  "hacker_ult": { "sounds": ["examplemod:skill/hacker_ult"] },
+
+  "hammer_attack": { "sounds": ["examplemod:skill/hammer_attack"] },
+  "hammer_z": { "sounds": ["examplemod:skill/hammer_z"] },
+  "hammer_x": { "sounds": ["examplemod:skill/hammer_x"] },
+  "hammer_ult": { "sounds": ["examplemod:skill/hammer_ult"] },
+
+  "berserker_attack": { "sounds": ["examplemod:skill/berserker_attack"] },
+  "berserker_z": { "sounds": ["examplemod:skill/berserker_z"] },
+  "berserker_x": { "sounds": ["examplemod:skill/berserker_x"] },
+  "berserker_ult": { "sounds": ["examplemod:skill/berserker_ult"] },
+
+  "phoenix_attack": { "sounds": ["examplemod:skill/phoenix_attack"] },
+  "phoenix_z": { "sounds": ["examplemod:skill/phoenix_z"] },
+  "phoenix_x": { "sounds": ["examplemod:skill/phoenix_x"] },
+  "phoenix_ult": { "sounds": ["examplemod:skill/phoenix_ult"] },
+  "phoenix_swing": { "sounds": ["examplemod:skill/phoenix_swing_1", "examplemod:skill/phoenix_swing_2"] },
+  "phoenix_zone": { "sounds": ["examplemod:skill/phoenix_zone"] }
 }

@@ -23,7 +23,16 @@ public class GuardEvents {
             return;
         }
 
-        event.setAmount(event.getAmount() * 0.25F);
+        event.setAmount(event.getAmount() * 0.5F);   // 가드: 받는 피해 50% 감소
+
+        // 막아냄 피드백: 방패 "텅" 소리(주변에도 들림) + 본인 화면 파란 플래시·아이콘 펄스
+        if (player.level() instanceof net.minecraft.server.level.ServerLevel level) {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    net.minecraft.sounds.SoundEvents.SHIELD_BLOCK,
+                    net.minecraft.sounds.SoundSource.PLAYERS, 0.7F, 1.1F);
+        }
+        com.example.examplemod.network.ModMessages.sendToPlayer(
+                new com.example.examplemod.network.GuardBlockS2CPacket(), player);
     }
 
         // 가드 중에는 일반 공격(데미지)도 안 나가게

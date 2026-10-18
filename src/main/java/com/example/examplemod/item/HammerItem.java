@@ -24,14 +24,27 @@ public class HammerItem extends SwordItem {
 
     private static final UUID REACH_MODIFIER_UUID =
             UUID.fromString("4c9e7f2b-8d3a-4e51-b6c7-444444444444");
+    private static final UUID DAMAGE_ADJUST_UUID =
+            UUID.fromString("4c9e7f2b-8d3a-4e51-b6c7-444444444445");
 
     private final Multimap<Attribute, AttributeModifier> customAttributes;
 
     public HammerItem(Properties properties) {
-        super(Tiers.IRON, 6, -3.2F, properties);   // 공격력 9 (2+6+1) 최고, 공격속도 0.8회/초 최저
+        super(Tiers.IRON, 4, -3.2F, properties);   // 공격력 6.5 (2+4+1-0.5), 공격속도 0.8회/초 최저 — DPS 5.2, 대신 스턴 킷+탱커 체력
 
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
         builder.putAll(super.getDefaultAttributeModifiers(EquipmentSlot.MAINHAND));
+
+        // 공격력 -0.5 (정수 단위 생성자로는 못 넣는 소수 보정 → 최종 6.5)
+        builder.put(
+                net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                new AttributeModifier(
+                        DAMAGE_ADJUST_UUID,
+                        "Hammer damage adjust",
+                        -0.5D,
+                        AttributeModifier.Operation.ADDITION
+                )
+        );
 
         builder.put(
                 ForgeMod.ENTITY_REACH.get(),

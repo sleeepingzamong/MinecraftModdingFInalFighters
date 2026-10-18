@@ -35,7 +35,7 @@ public class GamblerEvents {
 
     public static final int CARD_TICKS = 400;             // 카드 유지 20초
     private static final int BLACKJACK_TARGET = 21;       // 목표 합
-    private static final float BLACKJACK_DAMAGE = 15.0F;  // 블랙잭 보너스 데미지 (하트 7.5개)
+    private static final float BLACKJACK_DAMAGE = 12.0F;  // 블랙잭 보너스 데미지 (하트 6개)
 
     private static final int ROULETTE_TOTAL_TICKS = 80;        // 연출 4초
     private static final int DOME_RADIUS = 10;                 // 돔 반경(칸)
@@ -63,28 +63,29 @@ public class GamblerEvents {
         }
         if (changed) {
             CombatSync.syncStats(player);
+            syncCoinEffects(player, data);
+        } else {
+            // 코인은 있는데 아이콘이 없으면 복구 (상태초기화 등으로 효과만 지워진 경우)
+            boolean hasAnyCoin = data.getCoinType(0) != CoinType.NONE
+                    || data.getCoinType(1) != CoinType.NONE
+                    || data.getCoinType(2) != CoinType.NONE;
+            if (hasAnyCoin
+                    && !player.hasEffect(com.example.examplemod.registry.ModEffects.COIN_SEVEN.get())
+                    && !player.hasEffect(com.example.examplemod.registry.ModEffects.COIN_SKULL.get())) {
+                syncCoinEffects(player, data);
+            }
         }
 
-        // 2) 블랙잭 카드: 시간 감소 + 머리 위 숫자를 대상 위치로 이동
+        // 2) 블랙잭 카드: 시간 감소 (표시는 시전자 클라이언트가 그림 — CardMarkRenderEvents)
         int cardTicks = data.getCardTicks();
         if (cardTicks > 0) {
             Entity target = level.getEntity(data.getCardTargetId());
             if (target == null || !target.isAlive()) {
-                clearCard(level, data);
+                clearCard(player, data);
             } else {
-                Entity display = level.getEntity(data.getCardDisplayId());
-                if (display != null) {
-                    display.setPos(target.getX(), target.getY() + target.getBbHeight() + 0.6, target.getZ());
-                }
-                Entity model = level.getEntity(data.getCardModelDisplayId());
-                if (model != null) {
-                    // blackjack 카드: 적 중심으로 "내(시전자) 쪽" 방향에 떠 있음 → 내가 돌면 같이 공전
-                    Vec3 pos = cardModelPos(player, target);
-                    model.setPos(pos.x, pos.y, pos.z);
-                }
                 data.setCardTicks(cardTicks - 1);
                 if (cardTicks - 1 <= 0) {
-                    clearCard(level, data);
+                    clearCard(player, data);
                 }
             }
         }
@@ -136,14 +137,19 @@ public class GamblerEvents {
             double y = cPos.y;
             Vec3 center = new Vec3((cPos.x + tPos.x) / 2.0, y, (cPos.z + tPos.z) / 2.0);
 
-            // 서로 4칸 거리로 마주보게 강제 배치 (시선 포함)
+            // 서로 마주보게 강제 배치 (시선 포함)
+            // 배치 지점이 벽 안이면 중심 쪽으로 당겨 안전한 자리를 찾음 (벽뚫 방지)
             float casterYaw = yawFromDir(dir);
             float targetYaw = yawFromDir(dir.scale(-1));
-            caster.teleportTo(level, center.x - dir.x * FACE_HALF_GAP, y, center.z - dir.z * FACE_HALF_GAP, casterYaw, 0.0F);
+            Vec3 casterSpot = findSafeSpot(level, caster,
+                    new Vec3(center.x - dir.x * FACE_HALF_GAP, y, center.z - dir.z * FACE_HALF_GAP), center);
+            Vec3 targetSpot = findSafeSpot(level, target,
+                    new Vec3(center.x + dir.x * FACE_HALF_GAP, y, center.z + dir.z * FACE_HALF_GAP), center);
+            caster.teleportTo(level, casterSpot.x, casterSpot.y, casterSpot.z, casterYaw, 0.0F);
             if (target instanceof ServerPlayer tp) {
-                tp.teleportTo(level, center.x + dir.x * FACE_HALF_GAP, y, center.z + dir.z * FACE_HALF_GAP, targetYaw, 0.0F);
+                tp.teleportTo(level, targetSpot.x, targetSpot.y, targetSpot.z, targetYaw, 0.0F);
             } else {
-                target.teleportTo(center.x + dir.x * FACE_HALF_GAP, y, center.z + dir.z * FACE_HALF_GAP);
+                target.teleportTo(targetSpot.x, targetSpot.y, targetSpot.z);
                 faceTowards(target, caster);
             }
 
@@ -163,10 +169,21 @@ public class GamblerEvents {
                 out = out.lengthSqr() < 0.01 ? new Vec3(1, 0, 0) : out.normalize();
                 double px = center.x + out.x * (DOME_RADIUS + 2);
                 double pz = center.z + out.z * (DOME_RADIUS + 2);
+                // 밀려날 자리가 벽 안이면 위로 2칸까지 올려보고, 다 막혔으면 옮기지 않음 (벽뚫 방지)
+                double safeY = Double.NaN;
+                for (int dy = 0; dy <= 2; dy++) {
+                    if (isFree(level, bystander, px, bystander.getY() + dy, pz)) {
+                        safeY = bystander.getY() + dy;
+                        break;
+                    }
+                }
+                if (Double.isNaN(safeY)) {
+                    continue;
+                }
                 if (bystander instanceof ServerPlayer sp) {
-                    sp.teleportTo(level, px, bystander.getY(), pz, sp.getYRot(), sp.getXRot());
+                    sp.teleportTo(level, px, safeY, pz, sp.getYRot(), sp.getXRot());
                 } else {
-                    bystander.teleportTo(px, bystander.getY(), pz);
+                    bystander.teleportTo(px, safeY, pz);
                 }
             }
 
@@ -179,14 +196,14 @@ public class GamblerEvents {
                 data.setRouletteReel(i, CoinType.NONE);
             }
 
-            // 고정 좌표 기록 (연출 중 매 틱 이 자리로 스냅)
+            // 고정 좌표 기록 (연출 중 매 틱 이 자리로 스냅) — 실제 배치된 안전 좌표를 기록
             double[] anchors = data.getRouletteAnchors();
-            anchors[0] = center.x - dir.x * FACE_HALF_GAP;
-            anchors[1] = y;
-            anchors[2] = center.z - dir.z * FACE_HALF_GAP;
-            anchors[3] = center.x + dir.x * FACE_HALF_GAP;
-            anchors[4] = y;
-            anchors[5] = center.z + dir.z * FACE_HALF_GAP;
+            anchors[0] = casterSpot.x;
+            anchors[1] = casterSpot.y;
+            anchors[2] = casterSpot.z;
+            anchors[3] = targetSpot.x;
+            anchors[4] = targetSpot.y;
+            anchors[5] = targetSpot.z;
 
             data.setRoulettePartnerId(target.getId());
             data.setRouletteTicks(ROULETTE_TOTAL_TICKS);
@@ -222,7 +239,7 @@ public class GamblerEvents {
             // 아직 안 멈춘 릴은 빠르게 회전 (2틱마다 심볼 교체)
             for (int i = 0; i < 3; i++) {
                 if (data.getRouletteReel(i) == CoinType.NONE) {
-                    data.setRouletteDisplayId(i, respawnDisplay(level, data.getRouletteDisplayId(i), spinJson()));
+                    setDisplayText(level, data.getRouletteDisplayId(i), spinJson());
                 }
             }
         }
@@ -240,8 +257,8 @@ public class GamblerEvents {
         data.setRouletteReel(i, result);
         String json = result == CoinType.SEVEN
                 ? "{\"text\":\"7\",\"color\":\"gold\",\"bold\":true}"
-                : "{\"text\":\"해골\",\"color\":\"red\",\"bold\":true}";
-        data.setRouletteDisplayId(i, respawnDisplay(level, data.getRouletteDisplayId(i), json));
+                : "{\"text\":\"" + SKULL_GLYPH + "\",\"color\":\"red\",\"bold\":true}";
+        setDisplayText(level, data.getRouletteDisplayId(i), json);
     }
 
     private static void applyRouletteResult(ServerPlayer caster, ServerLevel level,
@@ -256,14 +273,47 @@ public class GamblerEvents {
         if (sevens >= 2) {
             // 7 우세: 내 공격력 +40% (30초) — 발표 순간 내 주변에서 7이 크게 뿜어짐
             data.setRouletteBuffTicks(ROULETTE_RESULT_TICKS);
+            caster.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    com.example.examplemod.registry.ModEffects.JACKPOT.get(),
+                    ROULETTE_RESULT_TICKS, 0, false, false, true));
             Vec3 c = caster.position();
             level.sendParticles(ModParticles.SEVEN.get(), c.x, c.y + 1.0, c.z, 40, 0.8, 0.8, 0.8, 0.15);
         } else {
             // 해골 우세: 상대 공격력 -50% (30초) — 발표 순간 상대 주변에서 해골이 크게 뿜어짐
             data.setRouletteDebuffTargetId(partner.getId());
             data.setRouletteDebuffTicks(ROULETTE_RESULT_TICKS);
+            partner.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    com.example.examplemod.registry.ModEffects.CURSED.get(),
+                    ROULETTE_RESULT_TICKS, 0, false, false, true));
             Vec3 c = partner.position();
             level.sendParticles(ModParticles.SKULL.get(), c.x, c.y + 1.0, c.z, 40, 0.8, 0.8, 0.8, 0.15);
+        }
+    }
+
+    // 코인 상태 → HUD 효과 아이콘 동기화 (개수 = 효과 레벨, 지속 = 가장 오래 남은 코인)
+    public static void syncCoinEffects(ServerPlayer player, PlayerCombatData data) {
+        int sevens = 0, skulls = 0, sevenTicks = 0, skullTicks = 0;
+        for (int i = 0; i < 3; i++) {
+            if (data.getCoinType(i) == CoinType.SEVEN) {
+                sevens++;
+                sevenTicks = Math.max(sevenTicks, data.getCoinTicks(i));
+            } else if (data.getCoinType(i) == CoinType.SKULL) {
+                skulls++;
+                skullTicks = Math.max(skullTicks, data.getCoinTicks(i));
+            }
+        }
+        // 스택이 줄 땐 낮은 레벨이 높은 레벨을 못 덮는 바닐라 규칙 때문에 항상 지우고 다시 적용
+        player.removeEffect(com.example.examplemod.registry.ModEffects.COIN_SEVEN.get());
+        if (sevens > 0) {
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    com.example.examplemod.registry.ModEffects.COIN_SEVEN.get(),
+                    sevenTicks, sevens - 1, false, false, true));
+        }
+        player.removeEffect(com.example.examplemod.registry.ModEffects.COIN_SKULL.get());
+        if (skulls > 0) {
+            player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                    com.example.examplemod.registry.ModEffects.COIN_SKULL.get(),
+                    skullTicks, skulls - 1, false, false, true));
         }
     }
 
@@ -303,7 +353,7 @@ public class GamblerEvents {
                     cleanupRoulette(player, level, data);
                 }
                 if (data.getCardTicks() > 0) {
-                    clearCard(level, data);   // 죽으면 카드 데이터가 초기화돼 표시가 영영 남던 버그 방지
+                    clearCard(player, data);   // 죽으면 카드 데이터가 초기화돼 표시가 영영 남던 버그 방지
                 }
             });
         }
@@ -311,6 +361,14 @@ public class GamblerEvents {
 
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            onCasterGone(player);
+        }
+    }
+
+    // 로그아웃 시에도 즉시 정리 (카드·룰렛 표시가 월드에 남지 않게)
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             onCasterGone(player);
         }
@@ -366,6 +424,31 @@ public class GamblerEvents {
     }
 
     // 완전 고정: 지정 좌표에서 벗어나면 되돌리고 속도도 죽임 (시점은 자유)
+    // 그 좌표에 서 있어도 블록과 겹치지 않는지 (히트박스 기준)
+    private static boolean isFree(ServerLevel level, LivingEntity entity, double x, double y, double z) {
+        AABB box = entity.getDimensions(entity.getPose()).makeBoundingBox(x, y, z);
+        return level.noCollision(entity, box);
+    }
+
+    // 원하는 배치 지점이 벽 안이면 중심 쪽으로 0.5칸씩 당기고(중심 1칸 앞까지),
+    // 각 지점마다 위로 2칸까지 올려본다. 전부 막혀 있으면 원래 서 있던 자리 그대로.
+    private static Vec3 findSafeSpot(ServerLevel level, LivingEntity entity, Vec3 desired, Vec3 center) {
+        Vec3 toCenter = new Vec3(center.x - desired.x, 0, center.z - desired.z);
+        double dist = toCenter.length();
+        Vec3 step = dist < 0.01 ? Vec3.ZERO : toCenter.scale(1.0 / dist);
+        double maxPull = Math.max(0, dist - 1.0);
+        for (double pull = 0; pull <= maxPull; pull += 0.5) {
+            double px = desired.x + step.x * pull;
+            double pz = desired.z + step.z * pull;
+            for (int dy = 0; dy <= 2; dy++) {
+                if (isFree(level, entity, px, desired.y + dy, pz)) {
+                    return new Vec3(px, desired.y + dy, pz);
+                }
+            }
+        }
+        return entity.position();
+    }
+
     private static void pinTo(ServerLevel level, LivingEntity e, double x, double y, double z) {
         if (e.distanceToSqr(x, y, z) > 0.01) {
             if (e instanceof ServerPlayer sp) {
@@ -416,21 +499,26 @@ public class GamblerEvents {
         return (float) Math.toDegrees(Math.atan2(-dir.x, dir.z));
     }
 
+    // 해골 기호 ☠ (마크 기본 글꼴의 유니코드 그림 글자) — 예전엔 "해골"이라는 글자가 그대로 떴음
+    private static final String SKULL_GLYPH = "☠";
+
     private static String spinJson() {
         // 회전 중 심볼 (회색으로 7/해골이 빠르게 교차)
         return Math.random() < 0.5
                 ? "{\"text\":\"7\",\"color\":\"gray\"}"
-                : "{\"text\":\"해골\",\"color\":\"gray\"}";
+                : "{\"text\":\"" + SKULL_GLYPH + "\",\"color\":\"gray\"}";
     }
 
-    private static int respawnDisplay(ServerLevel level, int oldId, String json) {
-        Entity old = level.getEntity(oldId);
-        if (old == null) {
-            return oldId;
+    // 릴 표시 엔티티를 그대로 둔 채 글자만 교체 (예전엔 2틱마다 지우고 새로 만들어 깜빡임·엔티티 낭비).
+    // 표시 엔티티의 글자 설정 함수가 비공개라, 저장 데이터를 꺼내 글자만 바꿔 다시 불러오는 방식
+    private static void setDisplayText(ServerLevel level, int id, String json) {
+        Entity display = level.getEntity(id);
+        if (display == null) {
+            return;
         }
-        Vec3 pos = old.position();
-        old.discard();
-        return spawnTextDisplay(level, pos, json);
+        CompoundTag tag = display.saveWithoutId(new CompoundTag());
+        tag.putString("text", json);
+        display.load(tag);
     }
 
     private static int spawnTextDisplay(ServerLevel level, Vec3 pos, String json) {
@@ -443,6 +531,8 @@ public class GamblerEvents {
             return e;
         });
         if (display != null) {
+            // 안전망: 어떤 경로로든 제거를 놓쳐도 카드 수명 + 여유 뒤엔 청소부가 소멸시킴
+            TempDisplaySweeper.mark(display, level.getGameTime() + CARD_TICKS + 60);
             level.addFreshEntity(display);
             return display.getId();
         }
@@ -451,21 +541,14 @@ public class GamblerEvents {
 
     // ==================== 블랙잭 카드 ====================
 
-    // 카드 투사체 명중: 그 적에게 카드 부착 (기존 카드는 회수)
+    // 카드 투사체 명중: 그 적에게 카드 부착 (표시는 시전자 화면에만 — CardMarkS2CPacket)
     public static void attachCard(ServerPlayer shooter, LivingEntity target) {
-        if (!(shooter.level() instanceof ServerLevel level)) {
-            return;
-        }
         shooter.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
-            removeCardDisplay(level, data);
-            removeCardModelDisplay(level, data);
             data.setCardTargetId(target.getId());
             data.setCardSum(0);
             data.setCardTicks(CARD_TICKS);
-            data.setCardDisplayId(spawnCardDisplay(level, target, 0));
-            // blackjack 카드 모델: 적에게서 시전자 쪽으로 떨어진 위치에 띄움
-            data.setCardModelDisplayId(spawnItemDisplay(level,
-                    cardModelPos(shooter, target), new ItemStack(ModItems.BLACKJACK.get())));
+            com.example.examplemod.network.ModMessages.sendToPlayer(
+                    new com.example.examplemod.network.CardMarkS2CPacket(target.getId(), 0, CARD_TICKS), shooter);
         });
     }
 
@@ -487,75 +570,49 @@ public class GamblerEvents {
                 level.sendParticles(ParticleTypes.EXPLOSION,
                         target.getX(), target.getY() + target.getBbHeight() / 2.0, target.getZ(),
                         3, 0.3, 0.3, 0.3, 0.0);
-                clearCard(level, data);
+                // 해골이 사방으로 확! 터져 나감 (count=0 = 오프셋이 속도 방향, 감속 0.95라 퍼졌다 멈춤)
+                for (int i = 0; i < 22; i++) {
+                    double yaw = shooter.getRandom().nextDouble() * Math.PI * 2;
+                    double pitch = (shooter.getRandom().nextDouble() - 0.35) * Math.PI * 0.7;
+                    double dx = Math.cos(yaw) * Math.cos(pitch);
+                    double dz = Math.sin(yaw) * Math.cos(pitch);
+                    double dy = Math.sin(pitch) + 0.2;
+                    level.sendParticles(ModParticles.SKULL.get(),
+                            target.getX(), target.getY() + target.getBbHeight() * 0.6, target.getZ(),
+                            0, dx, dy, dz, 0.13);   // 감속 감안 도달거리 약 2칸
+                }
+                clearCard(shooter, data);
             } else if (sum > BLACKJACK_TARGET) {
-                clearCard(level, data);   // 버스트 — 꽝
+                // 버스트 → 소멸 대신 초과분 이월 (예: 19+5=24 → 3부터 다시). 카드는 계속 유지
+                int carry = sum - BLACKJACK_TARGET;
+                data.setCardSum(carry);
+                com.example.examplemod.network.ModMessages.sendToPlayer(
+                        new com.example.examplemod.network.CardMarkS2CPacket(
+                                target.getId(), carry, data.getCardTicks()), shooter);
+                level.sendParticles(ParticleTypes.SMOKE,
+                        target.getX(), target.getY() + target.getBbHeight() + 0.6, target.getZ(),
+                        6, 0.2, 0.2, 0.2, 0.02);
+                shooter.displayClientMessage(
+                        net.minecraft.network.chat.Component.literal("버스트! 초과분 이월: " + carry), true);
             } else {
                 data.setCardSum(sum);
-                removeCardDisplay(level, data);
-                data.setCardDisplayId(spawnCardDisplay(level, target, sum));
+                com.example.examplemod.network.ModMessages.sendToPlayer(
+                        new com.example.examplemod.network.CardMarkS2CPacket(
+                                target.getId(), sum, data.getCardTicks()), shooter);
             }
         });
     }
 
     // 머리 위 "n / 21" 표시 생성
-    private static int spawnCardDisplay(ServerLevel level, LivingEntity target, int sum) {
-        Vec3 pos = new Vec3(target.getX(), target.getY() + target.getBbHeight() + 0.6, target.getZ());
-        return spawnTextDisplay(level, pos,
-                "{\"text\":\"" + sum + " / 21\",\"color\":\"gold\",\"bold\":true}");
-    }
-
-    private static void removeCardDisplay(ServerLevel level, PlayerCombatData data) {
-        Entity display = level.getEntity(data.getCardDisplayId());
-        if (display != null) {
-            display.discard();
+    // 카드 상태 정리 + 시전자 화면 표시 제거
+    private static void clearCard(ServerPlayer caster, PlayerCombatData data) {
+        if (data.getCardTargetId() != -1) {
+            com.example.examplemod.network.ModMessages.sendToPlayer(
+                    new com.example.examplemod.network.CardMarkS2CPacket(data.getCardTargetId(), 0, 0), caster);
         }
-        data.setCardDisplayId(-1);
-    }
-
-    // 카드 모델 위치: 적 가슴 높이에서, 시전자 방향으로 CARD_ORBIT_RADIUS만큼 떨어진 지점
-    private static final double CARD_ORBIT_RADIUS = 0.9;
-
-    private static Vec3 cardModelPos(LivingEntity shooter, Entity target) {
-        Vec3 toShooter = new Vec3(shooter.getX() - target.getX(), 0, shooter.getZ() - target.getZ());
-        toShooter = toShooter.lengthSqr() < 0.01 ? new Vec3(1, 0, 0) : toShooter.normalize();
-        return new Vec3(
-                target.getX() + toShooter.x * CARD_ORBIT_RADIUS,
-                target.getY() + target.getBbHeight() * 0.55,
-                target.getZ() + toShooter.z * CARD_ORBIT_RADIUS);
-    }
-
-    private static void removeCardModelDisplay(ServerLevel level, PlayerCombatData data) {
-        Entity display = level.getEntity(data.getCardModelDisplayId());
-        if (display != null) {
-            display.discard();
-        }
-        data.setCardModelDisplayId(-1);
-    }
-
-    private static void clearCard(ServerLevel level, PlayerCombatData data) {
-        removeCardDisplay(level, data);
-        removeCardModelDisplay(level, data);
         data.setCardTargetId(-1);
         data.setCardSum(0);
         data.setCardTicks(0);
-    }
-
-    // 아이템 디스플레이 생성 (도적 단검 표시와 같은 NBT 방식 — setItemStack이 막혀 있어서)
-    private static int spawnItemDisplay(ServerLevel level, Vec3 pos, ItemStack stack) {
-        CompoundTag tag = new CompoundTag();
-        tag.putString("id", "minecraft:item_display");
-        tag.put("item", stack.save(new CompoundTag()));
-        tag.putString("billboard", "center");   // 항상 카메라를 향함
-        Entity display = EntityType.loadEntityRecursive(tag, level, e -> {
-            e.setPos(pos.x, pos.y, pos.z);
-            return e;
-        });
-        if (display != null) {
-            level.addFreshEntity(display);
-            return display.getId();
-        }
-        return -1;
     }
 
     // ==================== 데미지 보정 (코인 ±15% / 룰렛 +40% / 룰렛 -50%) ====================

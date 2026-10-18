@@ -36,18 +36,20 @@ import java.util.UUID;
 public class SwordsmanEvents {
 
     // ==================== 튜닝 상수 ====================
-    private static final int ECHO_ATTACKS = 2;            // Z: 강화되는 평타 횟수
+    private static final int ECHO_ATTACKS = 1;            // Z: 강화되는 평타 횟수
     private static final int ECHO_DELAY_TICKS = 3;        // 추가 타격까지의 간격 (0.15초)
     private static final float ECHO_DAMAGE_RATIO = 1.0F;  // 추가 타격 데미지 배율 (1.0 = 원래 평타와 동일)
     private static final double ECHO_MAX_RANGE = 6.0D;    // 추가 타격 유효 거리 (그 사이 도망가면 안 맞음)
 
-    private static final int PARRY_MARKS = 3;             // X: 패링 표식 개수
+    private static final int PARRY_MARKS = 2;             // X: 패링 표식 개수
 
-    private static final int ENHANCE_DURATION_TICKS = 600;    // 궁 지속 (30초)
-    private static final float ENHANCE_LIFESTEAL = 0.3F;      // 흡혈: 가한 데미지의 30% 회복
-    private static final double ENHANCE_ATTACK_DAMAGE = 3.0D; // 공격력 +3
+    private static final int BUFF_VALID_TICKS = 100;      // Z 연격·X 패링 유효시간 (5초) — 안 쓰면 소멸
+
+    private static final int ENHANCE_DURATION_TICKS = 300;    // 궁 지속 (15초)
+    private static final float ENHANCE_LIFESTEAL = 0.2F;      // 흡혈: 가한 데미지의 20% 회복
+    private static final double ENHANCE_ATTACK_DAMAGE = 1.0D; // 공격력 +1
     private static final double ENHANCE_MOVE_SPEED = 0.2D;    // 이동속도 +20%
-    private static final double ENHANCE_ATTACK_SPEED = 0.3D;  // 공격속도 +30%
+    private static final double ENHANCE_ATTACK_SPEED = 0.15D; // 공격속도 +15%
     // =================================================
 
     private static final UUID ENHANCE_ATTACK_DAMAGE_UUID =
@@ -58,7 +60,9 @@ public class SwordsmanEvents {
             UUID.fromString("6a1c9e2b-7d4f-4c3a-8b5e-444444444444");
 
     private static final Map<UUID, Integer> ECHO_CHARGES = new HashMap<>();   // 연격 남은 평타 수
+    private static final Map<UUID, Long> ECHO_EXPIRE = new HashMap<>();       // 연격 유효 만료 시각
     private static final Map<UUID, Integer> PARRY = new HashMap<>();          // 남은 패링 표식
+    private static final Map<UUID, Long> PARRY_EXPIRE = new HashMap<>();      // 패링 유효 만료 시각
     private static final Map<UUID, Long> ENHANCE_UNTIL = new HashMap<>();     // 강화 종료 시각
     private static final List<EchoHit> PENDING_ECHO = new ArrayList<>();      // 예약된 추가 타격
 
@@ -69,24 +73,35 @@ public class SwordsmanEvents {
     // ===== Z 연격 =====
     public static void startEcho(ServerPlayer player) {
         ECHO_CHARGES.put(player.getUUID(), ECHO_ATTACKS);
+        ECHO_EXPIRE.put(player.getUUID(), player.level().getGameTime() + BUFF_VALID_TICKS);
+        // 표시 아이콘 — 유효시간과 같이 카운트다운 (평타로 소모되면 즉시 제거)
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                com.example.examplemod.registry.ModEffects.DOUBLE_HIT.get(), BUFF_VALID_TICKS, 0, false, false, true));
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 0.8F, 1.5F);
-        player.displayClientMessage(Component.literal("연격 준비 — 다음 평타 " + ECHO_ATTACKS + "회 강화"), true);
+        player.displayClientMessage(Component.literal(
+                "연격 준비 — " + (BUFF_VALID_TICKS / 20) + "초 안에 평타 " + ECHO_ATTACKS + "회 강화"), true);
     }
 
     // ===== X 패링 =====
     public static void startParry(ServerPlayer player) {
         PARRY.put(player.getUUID(), PARRY_MARKS);
+        PARRY_EXPIRE.put(player.getUUID(), player.level().getGameTime() + BUFF_VALID_TICKS);
         syncParry(player, PARRY_MARKS);
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                com.example.examplemod.registry.ModEffects.PARRY.get(), BUFF_VALID_TICKS, 0, false, false, true));
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.ARMOR_EQUIP_IRON, SoundSource.PLAYERS, 1.0F, 1.2F);
-        player.displayClientMessage(Component.literal("패링 태세 — 표식 " + PARRY_MARKS + "개"), true);
+        player.displayClientMessage(Component.literal(
+                "패링 태세 — 표식 " + PARRY_MARKS + "개 (" + (BUFF_VALID_TICKS / 20) + "초)"), true);
     }
 
     // ===== 궁 강화 =====
     public static void startEnhance(ServerPlayer player) {
         long now = player.level().getGameTime();
         ENHANCE_UNTIL.put(player.getUUID(), now + ENHANCE_DURATION_TICKS);
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                com.example.examplemod.registry.ModEffects.ENHANCE.get(), ENHANCE_DURATION_TICKS, 0, false, false, true));
 
         // 물약 효과 대신 능력치를 직접 올림 (HUD에 물약 아이콘·소용돌이 파티클 안 생김)
         addModifier(player, Attributes.ATTACK_DAMAGE, ENHANCE_ATTACK_DAMAGE_UUID,
@@ -99,8 +114,7 @@ public class SwordsmanEvents {
         ServerLevel level = (ServerLevel) player.level();
         level.sendParticles(ParticleTypes.FLAME,
                 player.getX(), player.getY() + 1.0D, player.getZ(), 30, 0.5D, 0.8D, 0.5D, 0.05D);
-        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.TOTEM_USE, SoundSource.PLAYERS, 0.6F, 1.3F);
+        // 소리는 커스텀 피리(swordsman_ult 슬롯)가 담당 — 바닐라 토템 소리 제거됨
         player.displayClientMessage(Component.literal("강화 발동! (" + (ENHANCE_DURATION_TICKS / 20) + "초)"), true);
     }
 
@@ -127,6 +141,8 @@ public class SwordsmanEvents {
         int left = marks - 1;
         if (left <= 0) {
             PARRY.remove(victim.getUUID());
+            PARRY_EXPIRE.remove(victim.getUUID());
+            victim.removeEffect(com.example.examplemod.registry.ModEffects.PARRY.get());
         } else {
             PARRY.put(victim.getUUID(), left);
         }
@@ -172,6 +188,8 @@ public class SwordsmanEvents {
         int left = charges - 1;
         if (left <= 0) {
             ECHO_CHARGES.remove(attacker.getUUID());
+            ECHO_EXPIRE.remove(attacker.getUUID());
+            attacker.removeEffect(com.example.examplemod.registry.ModEffects.DOUBLE_HIT.get());
         } else {
             ECHO_CHARGES.put(attacker.getUUID(), left);
         }
@@ -184,6 +202,25 @@ public class SwordsmanEvents {
     public static void tick(ServerPlayer player, ServerLevel level) {
         long now = level.getGameTime();
 
+        // 연격·패링 유효시간 만료 (5초 안에 안 쓰면 소멸)
+        Long echoExpire = ECHO_EXPIRE.get(player.getUUID());
+        if (echoExpire != null && now >= echoExpire) {
+            ECHO_EXPIRE.remove(player.getUUID());
+            if (ECHO_CHARGES.remove(player.getUUID()) != null) {
+                player.removeEffect(com.example.examplemod.registry.ModEffects.DOUBLE_HIT.get());
+                player.displayClientMessage(Component.literal("연격 만료"), true);
+            }
+        }
+        Long parryExpire = PARRY_EXPIRE.get(player.getUUID());
+        if (parryExpire != null && now >= parryExpire) {
+            PARRY_EXPIRE.remove(player.getUUID());
+            if (PARRY.remove(player.getUUID()) != null) {
+                syncParry(player, 0);
+                player.removeEffect(com.example.examplemod.registry.ModEffects.PARRY.get());
+                player.displayClientMessage(Component.literal("패링 만료"), true);
+            }
+        }
+
         // 예약된 추가 타격 실행 (이 플레이어가 시전자인 것만)
         if (!PENDING_ECHO.isEmpty()) {
             Iterator<EchoHit> it = PENDING_ECHO.iterator();
@@ -195,7 +232,8 @@ public class SwordsmanEvents {
                 it.remove();
                 Entity target = level.getEntity(hit.victim());
                 if (!(target instanceof LivingEntity living) || !living.isAlive()
-                        || living.distanceTo(player) > ECHO_MAX_RANGE) {
+                        || living.distanceTo(player) > ECHO_MAX_RANGE
+                        || living.isAlliedTo(player)) {   // 같은 팀은 추가타 제외
                     continue;
                 }
                 echoInProgress = true;
@@ -217,18 +255,30 @@ public class SwordsmanEvents {
         if (until != null) {
             if (now >= until || !player.isAlive()) {
                 endEnhance(player);
-            } else if (now % 5 == 0) {
-                level.sendParticles(ParticleTypes.CRIMSON_SPORE,
-                        player.getX(), player.getY() + 1.0D, player.getZ(), 2, 0.3D, 0.5D, 0.3D, 0.0D);
+            } else {
+                if (now % 5 == 0) {
+                    level.sendParticles(ParticleTypes.CRIMSON_SPORE,
+                            player.getX(), player.getY() + 1.0D, player.getZ(), 2, 0.3D, 0.5D, 0.3D, 0.0D);
+                }
+                // 발 밑 파란 기운 — 지나간 자리에 잠깐 남아 궤적처럼 보임
+                if (now % 2 == 0) {
+                    level.sendParticles(ENHANCE_BLUE_DUST,
+                            player.getX(), player.getY() + 0.1D, player.getZ(), 3, 0.35D, 0.05D, 0.35D, 0.0D);
+                }
             }
         }
     }
+
+    // 강화 지속 중 발 밑에 깔리는 파란 먼지
+    private static final net.minecraft.core.particles.DustParticleOptions ENHANCE_BLUE_DUST =
+            new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.25F, 0.5F, 1.0F), 1.2F);
 
     private static void endEnhance(ServerPlayer player) {
         ENHANCE_UNTIL.remove(player.getUUID());
         removeModifier(player, Attributes.ATTACK_DAMAGE, ENHANCE_ATTACK_DAMAGE_UUID);
         removeModifier(player, Attributes.MOVEMENT_SPEED, ENHANCE_MOVE_SPEED_UUID);
         removeModifier(player, Attributes.ATTACK_SPEED, ENHANCE_ATTACK_SPEED_UUID);
+        player.removeEffect(com.example.examplemod.registry.ModEffects.ENHANCE.get());
     }
 
     private static void addModifier(ServerPlayer player, Attribute attribute, UUID uuid,
@@ -250,9 +300,13 @@ public class SwordsmanEvents {
     // 사망·리스폰·접속종료 시 상태 정리
     public static void clear(ServerPlayer player) {
         ECHO_CHARGES.remove(player.getUUID());
+        ECHO_EXPIRE.remove(player.getUUID());
+        player.removeEffect(com.example.examplemod.registry.ModEffects.DOUBLE_HIT.get());
         if (PARRY.remove(player.getUUID()) != null) {
             syncParry(player, 0);
         }
+        PARRY_EXPIRE.remove(player.getUUID());
+        player.removeEffect(com.example.examplemod.registry.ModEffects.PARRY.get());
         endEnhance(player);
         PENDING_ECHO.removeIf(hit -> hit.attacker().equals(player.getUUID()));
     }

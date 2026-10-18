@@ -30,9 +30,9 @@ public class DojukMarkEvents {
     private static final double HIT_RANGE = 2.0;    // 이 거리 안이면 도달로 판정
     private static final float DASH_DAMAGE = 6.0F;  // 도달 시 데미지 (체력 3칸)
 
-    public static final int INVIS_TICKS = 200;            // 궁극기 투명화 10초
-    private static final int AFTERIMAGE_PERIOD = 40;      // 잔상 주기 2초
-    private static final float INVIS_BONUS_DAMAGE = 2.0F; // 투명 중 공격 추가데미지 (하트 1개)
+    public static final int INVIS_TICKS = 300;            // 궁극기 투명화 15초
+    private static final int AFTERIMAGE_PERIOD = 60;      // 잔상 주기 3초
+    private static final float INVIS_BONUS_DAMAGE = 5.0F; // 투명 중 공격 추가데미지 (하트 2.5개)
 
     // 표창 명중 시 호출: 표식 기록 + 대상 머리 위에 단검 모델 띄우기
     public static void applyMark(ServerPlayer shooter, LivingEntity target) {
@@ -59,6 +59,8 @@ public class DojukMarkEvents {
         });
         int displayId = -1;
         if (display != null) {
+            // 안전망: 제거를 놓친 고아 단검도 표식 수명 + 여유 뒤엔 청소부가 소멸시킴
+            TempDisplaySweeper.mark(display, level.getGameTime() + MARK_TICKS + 60);
             level.addFreshEntity(display);
             displayId = display.getId();
         }
@@ -69,6 +71,10 @@ public class DojukMarkEvents {
             data.setDojukMarkTicks(MARK_TICKS);
             data.setDojukMarkDisplayId(finalDisplayId);
         });
+
+        // 시전자에게만 보이는 발광 외곽선 (본인 클라이언트에서만 로컬 적용)
+        com.example.examplemod.network.ModMessages.sendToPlayer(
+                new com.example.examplemod.network.MarkGlowS2CPacket(target.getId(), MARK_TICKS), shooter);
     }
 
     // PlayerTickHub가 매 틱 호출 (이미 조회한 data를 받아 재조회 없음)
@@ -85,6 +91,7 @@ public class DojukMarkEvents {
                     if (display != null) {
                         display.discard();
                     }
+                    sendGlowOff(player, data.getDojukMarkTargetId());
                     data.setDojukMarkTicks(0);
                     data.setDojukMarkTargetId(-1);
                     data.setDojukMarkDisplayId(-1);
@@ -98,6 +105,7 @@ public class DojukMarkEvents {
                         if (display != null) {
                             display.discard();
                         }
+                        sendGlowOff(player, data.getDojukMarkTargetId());
                         data.setDojukMarkTargetId(-1);
                         data.setDojukMarkDisplayId(-1);
                     }
@@ -124,6 +132,14 @@ public class DojukMarkEvents {
                 if (target == null || !target.isAlive()) {
                     data.setDojukDashTicks(0);
                     data.setDojukMarkTargetId(-1);
+                    return;
+                }
+                // 스턴에 걸리면 돌진이 끊김 (날아가던 속도도 죽임, 도달 데미지 없음)
+                if (StunManager.isStunned(player)) {
+                    data.setDojukDashTicks(0);
+                    data.setDojukMarkTargetId(-1);
+                    player.setDeltaMovement(player.getDeltaMovement().scale(0.2));
+                    player.hurtMarked = true;
                     return;
                 }
 
@@ -162,6 +178,7 @@ public class DojukMarkEvents {
             if (display != null) {
                 display.discard();
             }
+            sendGlowOff(player, data.getDojukMarkTargetId());
             data.setDojukMarkDisplayId(-1);
             data.setDojukMarkTicks(0);
             data.setDojukMarkTargetId(-1);
@@ -169,8 +186,24 @@ public class DojukMarkEvents {
         });
     }
 
+    // 시전자 클라이언트의 표식 발광 끄기
+    private static void sendGlowOff(ServerPlayer shooter, int targetId) {
+        if (targetId != -1) {
+            com.example.examplemod.network.ModMessages.sendToPlayer(
+                    new com.example.examplemod.network.MarkGlowS2CPacket(targetId, 0), shooter);
+        }
+    }
+
     @SubscribeEvent
     public static void onLivingDeath(LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            clearMark(player);
+        }
+    }
+
+    // 로그아웃 시에도 즉시 정리 (단검 표시가 월드에 남지 않게)
+    @SubscribeEvent
+    public static void onPlayerLoggedOut(net.minecraftforge.event.entity.player.PlayerEvent.PlayerLoggedOutEvent event) {
         if (event.getEntity() instanceof ServerPlayer player) {
             clearMark(player);
         }

@@ -42,7 +42,7 @@ public class HackerEvents {
     private static final int BUG_IGNORE_TICKS = 40;         // 버그 무시 2초 (무적 + 스턴·둔화 면역)
 
     private static final double HACK_RANGE = 12.0D;         // 궁 대상 지정 사거리
-    private static final int HACK_TICKS = 400;              // 시스템 해킹 지속 20초
+    private static final int HACK_TICKS = 260;              // 시스템 해킹 지속 13초
     // =================================================
 
     private static final Map<UUID, Deque<Vec3>> HISTORY = new HashMap<>();        // 최근 3초 위치 기록
@@ -94,8 +94,14 @@ public class HackerEvents {
         ModMessages.sendToTrackingAndSelf(
                 new com.example.examplemod.network.BugIgnoreS2CPacket(player.getId(), BUG_IGNORE_TICKS), player);
         player.removeEffect(net.minecraft.world.effect.MobEffects.MOVEMENT_SLOWDOWN);   // 걸려있던 둔화도 제거
+        // 오른쪽 위 상태 아이콘
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                com.example.examplemod.registry.ModEffects.BUG_IGNORE.get(), BUG_IGNORE_TICKS, 0, false, false, true));
+        // 8비트 게임 효과음: 노트블록 "bit" 두 음을 겹쳐 파워업 블립처럼
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                SoundEvents.AMETHYST_CLUSTER_BREAK, SoundSource.PLAYERS, 1.0F, 1.8F);
+                SoundEvents.NOTE_BLOCK_BIT.value(), SoundSource.PLAYERS, 1.0F, 1.4F);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.NOTE_BLOCK_BIT.value(), SoundSource.PLAYERS, 0.7F, 1.9F);
         level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
                 player.getX(), player.getY() + 1.0D, player.getZ(), 12, 0.3D, 0.6D, 0.3D, 0.15D);
         player.displayClientMessage(Component.literal("버그 무시 — 2초 무적·CC 면역"), true);
@@ -125,13 +131,17 @@ public class HackerEvents {
     public static void systemHack(ServerPlayer player, ServerLevel level) {
         ServerPlayer target = findLookPlayer(player, level, HACK_RANGE);
         if (target == null) {
+            // SkillManager가 미리 막지만 만약을 위해 — 게이지 전액 환불
             player.sendSystemMessage(Component.literal("대상(플레이어)이 없습니다."));
-            UltimateGaugeManager.addGauge(player, 1);   // 헛방이면 게이지 환불
+            UltimateGaugeManager.addGauge(player, UltimateGaugeManager.MAX_GAUGE);
             return;
         }
 
         HACKED_UNTIL.put(target.getUUID(), level.getGameTime() + HACK_TICKS);
         ModMessages.sendToPlayer(new SystemHackS2CPacket(HACK_TICKS), target);
+        // 당한 쪽 오른쪽 위 상태 아이콘
+        target.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                com.example.examplemod.registry.ModEffects.HACKED.get(), HACK_TICKS, 0, false, false, true));
 
         level.playSound(null, target.getX(), target.getY(), target.getZ(),
                 SoundEvents.ELDER_GUARDIAN_CURSE, SoundSource.PLAYERS, 0.5F, 1.5F);
@@ -202,8 +212,10 @@ public class HackerEvents {
                 level.sendParticles(ParticleTypes.ELECTRIC_SPARK,
                         bomb.pos().x, bomb.pos().y + 1.0D, bomb.pos().z, 30, 0.6D, 0.8D, 0.6D, 0.4D);
                 AABB area = new AABB(bomb.pos(), bomb.pos()).inflate(GLITCH_RADIUS, 1.5D, GLITCH_RADIUS);
+                net.minecraft.world.entity.player.Player bombOwner = level.getPlayerByUUID(bomb.owner());
                 for (LivingEntity victim : level.getEntitiesOfClass(LivingEntity.class, area,
-                        e -> e.isAlive() && !e.getUUID().equals(bomb.owner()))) {
+                        e -> e.isAlive() && !e.getUUID().equals(bomb.owner())
+                                && (bombOwner == null || !e.isAlliedTo(bombOwner)))) {   // 같은 팀 스턴 제외
                     StunManager.stun(victim, GLITCH_STUN_TICKS);
                 }
             }
@@ -224,6 +236,14 @@ public class HackerEvents {
         if (HACKED_UNTIL.remove(player.getUUID()) != null) {
             ModMessages.sendToPlayer(new SystemHackS2CPacket(0), player);
         }
+        player.removeEffect(com.example.examplemod.registry.ModEffects.BUG_IGNORE.get());
+        player.removeEffect(com.example.examplemod.registry.ModEffects.HACKED.get());
+    }
+
+    // 궁 시전 가능 여부 (SkillManager가 게이지 소모 전에 확인)
+    public static boolean hasHackTarget(ServerPlayer player) {
+        return player.level() instanceof ServerLevel level
+                && findLookPlayer(player, level, HACK_RANGE) != null;
     }
 
     // 시선 방향의 가장 가까운 "플레이어" (몹은 교란 대상이 아님)
@@ -235,7 +255,7 @@ public class HackerEvents {
         ServerPlayer target = null;
         double bestProj = range;
         for (ServerPlayer e : level.getEntitiesOfClass(ServerPlayer.class, box,
-                x -> x != player && x.isAlive())) {
+                x -> x != player && x.isAlive() && !x.isAlliedTo(player))) {   // 같은 팀 해킹 제외
             Vec3 c = e.getBoundingBox().getCenter();
             double proj = c.subtract(eye).dot(look);
             if (proj < 0 || proj > range) {

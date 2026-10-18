@@ -23,7 +23,9 @@ public class GunShootC2SPacket {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player != null) {
+            // 관전 중·스턴 중 발사 불가 (리볼버 사격 = 갬블러 평타)
+            if (player != null && !player.isSpectator()
+                    && !com.example.examplemod.combat.StunManager.isStunned(player)) {
                 RevolverItem.tryShoot(player);
             }
         });

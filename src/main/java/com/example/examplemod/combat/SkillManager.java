@@ -5,6 +5,10 @@ import net.minecraft.server.level.ServerPlayer;
 import com.example.examplemod.capability.PlayerCombatDataProvider;   // 맨 위 import 구역에
 public class SkillManager {
 
+    // 동시 시전 방지: 마지막 스킬 시전 시각 (이 안에 들어온 두 번째 스킬은 무시)
+    private static final java.util.Map<java.util.UUID, Long> LAST_CAST_TICK = new java.util.HashMap<>();
+    private static final int SIMULCAST_WINDOW = 3;   // 3틱(0.15초)
+
     private static final CharacterSkills MONKEY_SKILLS = new MonkeySkills();
     private static final CharacterSkills CYBORG_SKILLS = new CyborgSkills();
     private static final CharacterSkills DOJUK_SKILLS = new DojukSkills();
@@ -12,7 +16,8 @@ public class SkillManager {
     private static final CharacterSkills SWORDSMAN_SKILLS = new SwordsmanSkills();
     private static final CharacterSkills HACKER_SKILLS = new HackerSkills();
     private static final CharacterSkills HAMMER_SKILLS = new HammerSkills();
-    private static final CharacterSkills SINGER_SKILLS = new SingerSkills();
+    private static final CharacterSkills BERSERKER_SKILLS = new BerserkerSkills();
+    private static final CharacterSkills PHOENIX_SKILLS = new PhoenixSkills();
 
     public static void useSkill(ServerPlayer player, SkillType skillType, int chargeTick) {
         if (GuardManager.isGuarding(player)) {
@@ -36,10 +41,12 @@ public class SkillManager {
         CharacterType characterType = PlayerCharacterManager.getCharacter(player);
         CharacterSkills skills = getSkills(characterType);
 
+        // 캐릭터 미선택 — 자원 소모 전에 차단
         if (skills == null) {
-            player.sendSystemMessage(Component.literal("캐릭터가 선택되지 않았습니다."));
+            player.sendSystemMessage(Component.literal("능력 없음"));
             return;
         }
+
 
         // 해머 X 재입력 = 회전 종료 (자원 소모 없음, 쿨타임보다 먼저 — 언제든 끌 수 있어야 함)
         if (characterType == CharacterType.HAMMER && skillType == SkillType.SKILL_2
@@ -66,8 +73,17 @@ public class SkillManager {
         boolean onCooldown = player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA)
                 .map(data -> now < data.getSkillReadyTick(skillType))
                 .orElse(false);
-        if (onCooldown) {
+        // 도적 X: 표식·돌진 중의 재입력(돌진 시작·취소)은 표창 쿨타임을 무시
+        boolean bypassCooldown = characterType == CharacterType.DOJUK && skillType == SkillType.SKILL_2
+                && DojukSkills.isMarkOrDashActive(player);
+        if (onCooldown && !bypassCooldown) {
             return;   // 대쉬처럼 조용히 무시
+        }
+
+        // 두 스킬 키를 동시에 눌러 같은 순간 겹쳐 시전되는 것 방지 (자원 소모 전 차단)
+        Long lastCast = LAST_CAST_TICK.get(player.getUUID());
+        if (lastCast != null && now - lastCast < SIMULCAST_WINDOW) {
+            return;
         }
 
         // 사이보그 Z: 복사한 스킬이 없으면 자원 소모 전에 차단 (스태미나·쿨타임 안 씀)
@@ -84,9 +100,52 @@ public class SkillManager {
             return;
         }
 
+        // 도적 Z: 시선에 대상이 없으면 자원 소모 전에 차단 (스태미나·쿨타임 안 씀)
+        if (characterType == CharacterType.DOJUK && skillType == SkillType.SKILL_1
+                && !DojukSkills.hasTeleportTarget(player)) {
+            player.sendSystemMessage(Component.literal("대상이 없습니다."));
+            return;
+        }
+
+        // 사이보그 X: 분신 2개 제한 (자원 소모 전에 차단)
+        if (characterType == CharacterType.CYBORG && skillType == SkillType.SKILL_2
+                && !CyborgSkills.canSummonClone(player)) {
+            player.sendSystemMessage(Component.literal("분신은 2개까지만 소환할 수 있습니다."));
+            return;
+        }
+
+        // 광전사 X: 분노가 부족하면 자원 소모 전에 차단 (스태미나·쿨타임 안 씀)
+        if (characterType == CharacterType.BERSERKER && skillType == SkillType.SKILL_2
+                && !BerserkerEvents.hasFrenzyRage(player)) {
+            player.sendSystemMessage(Component.literal(
+                    "분노가 부족합니다! (" + BerserkerEvents.FRENZY_RAGE_COST + " 필요)"));
+            return;
+        }
+
+        // 불사조 X: 공중(미착지) 상태에서는 재사용 불가 (착지해야 쿨타임이 돌기 시작)
+        if (characterType == CharacterType.PHOENIX && skillType == SkillType.SKILL_2
+                && PhoenixEvents.isDashPending(player)) {
+            return;
+        }
+
+
+        // 갬블러 궁: 대상 없음·룰렛 진행 중이면 게이지 소모 전에 차단
+        if (characterType == CharacterType.GAMBLER && skillType == SkillType.ULTIMATE
+                && !GamblerSkills.canStartRoulette(player)) {
+            player.sendSystemMessage(Component.literal("대상이 없습니다."));
+            return;
+        }
+
+        // 해커 궁: 시선에 플레이어가 없으면 게이지 소모 전에 차단
+        if (characterType == CharacterType.HACKER && skillType == SkillType.ULTIMATE
+                && !HackerEvents.hasHackTarget(player)) {
+            player.sendSystemMessage(Component.literal("대상(플레이어)이 없습니다."));
+            return;
+        }
+
         if (skillType == SkillType.ULTIMATE) {
-            // 궁극기는 게이지만 소모 (스태미나는 안 씀)
-            if (!UltimateGaugeManager.consumeGauge(player, 1)) {
+            // 궁극기는 게이지 전체(100)를 소모 (스태미나는 안 씀)
+            if (!UltimateGaugeManager.consumeGauge(player, UltimateGaugeManager.MAX_GAUGE)) {
                 return;
             }
         } else if (!StaminaManager.consumeStamina(player, 1)) {
@@ -101,11 +160,30 @@ public class SkillManager {
             data.setCastSlot(castSlotType);
         });
 
+        LAST_CAST_TICK.put(player.getUUID(), now);
+
         switch (skillType) {
             case SKILL_1 -> skills.useSkill1(player, chargeTick);
             case SKILL_2 -> skills.useSkill2(player, chargeTick);
             case ULTIMATE -> skills.useUltimate(player, chargeTick);
             default -> {
+            }
+        }
+
+        // 캐릭터별 스킬 사운드 슬롯 재생 (기본은 무음 — sounds/skill/<캐릭터>_<z|x|ult>.ogg만
+        // 교체하면 재시작 없이 F3+T로 새 소리가 적용됨)
+        String slotKey = switch (skillType) {
+            case SKILL_1 -> "z";
+            case SKILL_2 -> "x";
+            case ULTIMATE -> "ult";
+            default -> null;
+        };
+        if (slotKey != null) {
+            var slotSound = com.example.examplemod.registry.ModSounds.SKILL_SOUNDS.get(
+                    characterType.name().toLowerCase(java.util.Locale.ROOT) + "_" + slotKey);
+            if (slotSound != null) {
+                player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                        slotSound.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
             }
         }
 
@@ -118,6 +196,18 @@ public class SkillManager {
             com.example.examplemod.network.ModMessages.sendToPlayer(
                     new com.example.examplemod.network.CooldownS2CPacket(skillType, cooldown), player);
         }
+    }
+
+    // 외부에서 쿨타임을 강제로 걸기 (캐릭터 선택·상태초기화 시 해커 Z 등) — HUD 카운트다운 포함
+    public static void applyCooldown(ServerPlayer player, SkillType skillType, int ticks) {
+        if (ticks <= 0) {
+            return;
+        }
+        final long readyAt = player.level().getGameTime() + ticks;
+        player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA)
+                .ifPresent(data -> data.setSkillReadyTick(skillType, readyAt));
+        com.example.examplemod.network.ModMessages.sendToPlayer(
+                new com.example.examplemod.network.CooldownS2CPacket(skillType, ticks), player);
     }
 
     public static void useDash(ServerPlayer player, double dirX, double dirZ) {
@@ -196,7 +286,8 @@ public class SkillManager {
             case SWORDSMAN -> SWORDSMAN_SKILLS;
             case HACKER -> HACKER_SKILLS;
             case HAMMER -> HAMMER_SKILLS;
-            case SINGER -> SINGER_SKILLS;
+            case BERSERKER -> BERSERKER_SKILLS;
+            case PHOENIX -> PHOENIX_SKILLS;
             default -> null;
         };
     }

@@ -1,0 +1,26 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"run_katana": {
+			"loop": true,
+			"bones": {
+				"right_arm": {
+					"rotation": {
+						"vector": [-30.57, -3.71, -12.61]
+					},
+					"position": {
+						"vector": [0, -3, -6]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [-28.35, 50.44, 32.52]
+					},
+					"position": {
+						"vector": [0, -3, -6]
+					}
+				}
+			}
+		}
+	}
+}

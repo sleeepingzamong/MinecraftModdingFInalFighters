@@ -57,9 +57,19 @@ public class CyborgSkills implements CharacterSkills {
         CombatSync.syncStats(player);   // HUD 복사 스킬 표시 → 없음
     }
 
+    // 분신 소환 가능 여부 (최대 2개) — SkillManager가 자원 소모 전에 확인
+    public static boolean canSummonClone(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level)) {
+            return false;
+        }
+        return level.getEntitiesOfClass(CloneEntity.class,
+                player.getBoundingBox().inflate(128.0D),
+                c -> c.isAlive() && player.getUUID().equals(c.getOwnerUUID())).size() < 2;
+    }
+
     @Override
     public void useSkill2(ServerPlayer player, int chargeTick) {
-        // 분신 소환: 플레이어 스킨 분신이 10초간 주변 적대 몹을 근접 공격한다.
+        // 분신 소환: 플레이어 스킨 분신이 10초간 주변 적을 근접 공격한다. (최대 2개)
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
@@ -82,6 +92,10 @@ public class CyborgSkills implements CharacterSkills {
         clone.setDropChance(EquipmentSlot.MAINHAND, 0.0F);
         clone.setItemSlot(EquipmentSlot.OFFHAND, new ItemStack(ModItems.POWER_KNUCKLE.get()));
         clone.setDropChance(EquipmentSlot.OFFHAND, 0.0F);
+
+        // 본체와 같은 외골격 흉갑 착용 (외형용 — 죽어도 안 떨굼)
+        clone.setItemSlot(EquipmentSlot.CHEST, new ItemStack(ModItems.CYBORG_CHESTPLATE.get()));
+        clone.setDropChance(EquipmentSlot.CHEST, 0.0F);
 
         level.addFreshEntity(clone);
 

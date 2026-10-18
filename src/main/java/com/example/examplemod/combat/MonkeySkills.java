@@ -33,7 +33,9 @@ public class MonkeySkills implements CharacterSkills {
             return;
         }
 
-        CommonCombatActions.fireProjectile(player, 4);
+        // 날아가는 여의봉은 순수 연출 (데미지 0) — 실제 타격은 아래 sweepAttack 하나만
+        // (투사체가 기본 6뎀을 갖고 있어 비차징 시 둘 다 맞아 2번 들어가던 버그 수정)
+        CommonCombatActions.fireProjectile(player, 4, null, 0.0F);
 
         double chargeRate = getChargeRate(chargeTick);
         double damage = 4.0D + chargeRate * 2.0D;
@@ -63,13 +65,14 @@ public class MonkeySkills implements CharacterSkills {
             return;
         }
 
-        CommonCombatActions.fireProjectile(player, 6);
+        // 날아가는 여의봉은 순수 연출 (데미지 0) — 실제 타격은 아래 sweepAttack 하나만
+        CommonCombatActions.fireProjectile(player, 8, null, 0.0F);
 
         double chargeRate = getChargeRate(chargeTick);
         double pullPower = 2.0D + chargeRate * 1.3D;
         double damage = 2.0D + chargeRate * 3.0D;
 
-        sweepAttack(player, level, direction, 6, 1.0D, 2.5D, 2.5D,
+        sweepAttack(player, level, direction, 8, 1.0D, 2.5D, 2.5D,
                 center -> level.sendParticles(ParticleTypes.SWEEP_ATTACK,
                         center.x, center.y, center.z,
                         2 + (int) (chargeRate * 4), 0.2, 0.2, 0.2, 0.01),
@@ -97,10 +100,9 @@ public class MonkeySkills implements CharacterSkills {
                     p.getX(), p.getY(), p.getZ(), 1.0F, 1.0F, seed));
         }
 
-        double chargeRate = getChargeRate(chargeTick);
-        float damage = (float) (12.0D + chargeRate * 6.0D);   // 차징할수록 12~18
+        float damage = 18.0F;   // 고정 (차징 제거)
 
-        // 2초(40틱) 뒤 발사 예약 (데미지는 지금 시점 차징으로 확정)
+        // 2초(40틱) 뒤 발사 예약
         player.getCapability(PlayerCombatDataProvider.PLAYER_COMBAT_DATA).ifPresent(data -> {
             data.setBuddaWindupTicks(40);
             data.setBuddaDamage(damage);
@@ -138,7 +140,7 @@ public class MonkeySkills implements CharacterSkills {
             List<LivingEntity> targets = level.getEntitiesOfClass(
                     LivingEntity.class,
                     attackBox,
-                    entity -> entity.isAlive() && entity != player
+                    entity -> entity.isAlive() && entity != player && !entity.isAlliedTo(player)
             );
 
             onCenter.accept(center);

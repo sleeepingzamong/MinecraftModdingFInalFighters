@@ -31,10 +31,15 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class CloneRenderer extends MobRenderer<CloneEntity, PlayerModel<CloneEntity>> {
 
     public CloneRenderer(EntityRendererProvider.Context context) {
-        // false = 넓은 팔(WIDE). 0.5F = 플레이어와 같은 그림자 크기.
-        super(context, new PlayerModel<>(context.bakeLayer(ModelLayers.PLAYER), false), 0.5F);
-        // 손에 든 아이템(카타나)을 그리는 레이어
+        // 분신 전용 모델(복싱 가드 자세 포함). 0.5F = 플레이어와 같은 그림자 크기.
+        super(context, new CloneModel(context.bakeLayer(ModelLayers.PLAYER)), 0.5F);
+        // 손에 든 아이템(너클)을 그리는 레이어
         this.addLayer(new ItemInHandLayer<>(this, context.getItemInHandRenderer()));
+        // 갑옷 레이어 — 흉갑(외골격 커스텀 모델)이 본체처럼 그려지게
+        this.addLayer(new net.minecraft.client.renderer.entity.layers.HumanoidArmorLayer<>(this,
+                new net.minecraft.client.model.HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_INNER_ARMOR)),
+                new net.minecraft.client.model.HumanoidModel<>(context.bakeLayer(ModelLayers.PLAYER_OUTER_ARMOR)),
+                context.getModelManager()));
     }
 
     @Override

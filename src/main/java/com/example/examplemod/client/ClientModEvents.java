@@ -47,18 +47,62 @@ public class ClientModEvents {
         event.register(ModKeyMappings.ULTIMATE_KEY);
         event.register(ModKeyMappings.DASH_KEY);
         event.register(ModKeyMappings.GUARD_KEY);
-        event.register(ModKeyMappings.CHARACTER_SELECT_KEY);
     }
+
+    private static final ResourceLocation LOW_HEALTH_VIGNETTE =
+            new ResourceLocation(ExampleMod.MODID, "textures/gui/low_health_vignette.png");
+    private static final ResourceLocation GUARD_VIGNETTE =
+            new ResourceLocation(ExampleMod.MODID, "textures/gui/guard_vignette.png");
 
     @SubscribeEvent
     public static void registerOverlays(RegisterGuiOverlaysEvent event) {
         event.registerAboveAll("combat_hud", CombatHudOverlay.HUD);
+
+        // 빈사 비네트: HUD 아래에 깔리는 붉은 화면 테두리 (심장박동에 맞춰 펄스)
+        event.registerBelowAll("low_health_vignette", (gui, guiGraphics, partialTick, width, height) -> {
+            float alpha = LowHealthEffects.vignetteAlpha(partialTick);
+            if (alpha <= 0f) {
+                return;
+            }
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+            guiGraphics.setColor(1f, 1f, 1f, alpha);
+            guiGraphics.blit(LOW_HEALTH_VIGNETTE, 0, 0, width, height, 0f, 0f, 256, 256, 256, 256);
+            guiGraphics.setColor(1f, 1f, 1f, 1f);
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+        });
+
+        // 가드 비네트: 가드 중 푸른 화면 테두리, 피해를 막아내면 진해졌다 풀림
+        event.registerBelowAll("guard_vignette", (gui, guiGraphics, partialTick, width, height) -> {
+            float alpha = ClientGuardFx.vignetteAlpha(partialTick);
+            if (alpha <= 0f) {
+                return;
+            }
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+            guiGraphics.setColor(1f, 1f, 1f, alpha);
+            guiGraphics.blit(GUARD_VIGNETTE, 0, 0, width, height, 0f, 0f, 256, 256, 256, 256);
+            guiGraphics.setColor(1f, 1f, 1f, 1f);
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+        });
     }
 
     @SubscribeEvent
     public static void registerParticles(RegisterParticleProvidersEvent event) {
         event.registerSpriteSet(ModParticles.SEVEN.get(), GamblerParticle.Provider::new);
         event.registerSpriteSet(ModParticles.SKULL.get(), GamblerParticle.Provider::new);
+        event.registerSpriteSet(ModParticles.RAGE.get(), RageParticle.Provider::new);
+        // 바닐라 블록 부스러기 공급자를 필터 버전으로 교체 — 도적 발밑 달리기·착지 잔해 제거
+        event.registerSpecial(net.minecraft.core.particles.ParticleTypes.BLOCK,
+                new NoTraceBlockParticleProvider());
+    }
+
+    // 캐릭터 장비 커스텀 모델 지오메트리 등록
+    @SubscribeEvent
+    public static void registerLayers(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        for (String name : com.example.examplemod.client.armor.ClientArmorModels.NAMES) {
+            event.registerLayerDefinition(
+                    com.example.examplemod.client.armor.ClientArmorModels.layerLocation(name),
+                    () -> com.example.examplemod.client.armor.CharacterArmorModel.createLayer(name));
+        }
     }
 
     @SubscribeEvent

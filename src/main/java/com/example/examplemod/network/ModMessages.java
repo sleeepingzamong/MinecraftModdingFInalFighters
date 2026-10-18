@@ -111,14 +111,6 @@ public class ModMessages {
 
         INSTANCE.registerMessage(
                 packetId++,
-                PunchC2SPacket.class,
-                PunchC2SPacket::encode,
-                PunchC2SPacket::new,
-                PunchC2SPacket::handle
-        );
-
-        INSTANCE.registerMessage(
-                packetId++,
                 SystemHackS2CPacket.class,
                 SystemHackS2CPacket::encode,
                 SystemHackS2CPacket::new,
@@ -140,6 +132,70 @@ public class ModMessages {
                 CooldownS2CPacket::new,
                 CooldownS2CPacket::handle
         );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                FearS2CPacket.class,
+                FearS2CPacket::encode,
+                FearS2CPacket::new,
+                FearS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                RageS2CPacket.class,
+                RageS2CPacket::encode,
+                RageS2CPacket::new,
+                RageS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                MarkGlowS2CPacket.class,
+                MarkGlowS2CPacket::encode,
+                MarkGlowS2CPacket::new,
+                MarkGlowS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                GuardBlockS2CPacket.class,
+                GuardBlockS2CPacket::encode,
+                GuardBlockS2CPacket::new,
+                GuardBlockS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                HitMarkerS2CPacket.class,
+                HitMarkerS2CPacket::encode,
+                HitMarkerS2CPacket::new,
+                HitMarkerS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                CardMarkS2CPacket.class,
+                CardMarkS2CPacket::encode,
+                CardMarkS2CPacket::new,
+                CardMarkS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                DamagePopupS2CPacket.class,
+                DamagePopupS2CPacket::encode,
+                DamagePopupS2CPacket::new,
+                DamagePopupS2CPacket::handle
+        );
+
+        INSTANCE.registerMessage(
+                packetId++,
+                PhoenixZoneS2CPacket.class,
+                PhoenixZoneS2CPacket::encode,
+                PhoenixZoneS2CPacket::new,
+                PhoenixZoneS2CPacket::handle
+        );
     }
 
     public static void sendToServer(Object message) {
@@ -154,5 +210,16 @@ public class ModMessages {
     // 이 플레이어를 보고 있는 모든 클라이언트 + 본인에게 보내기 (모두에게 보이는 연출용)
     public static void sendToTrackingAndSelf(Object message, ServerPlayer player) {
         INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), message);
+    }
+
+    // 이 엔티티(몹 포함)를 보고 있는 모든 클라이언트에게 보내기 (엔티티가 플레이어면 본인 포함)
+    public static void sendToTracking(Object message, net.minecraft.world.entity.Entity entity) {
+        INSTANCE.send(PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> entity), message);
+    }
+
+    // 같은 차원의 모든 클라이언트에게 보내기 (바닥 장판처럼 특정 엔티티에 안 붙은 연출용)
+    public static void sendToDimension(Object message,
+                                       net.minecraft.resources.ResourceKey<net.minecraft.world.level.Level> dimension) {
+        INSTANCE.send(PacketDistributor.DIMENSION.with(() -> dimension), message);
     }
 }

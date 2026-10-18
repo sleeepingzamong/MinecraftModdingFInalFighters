@@ -21,8 +21,9 @@ public class MonkeyUltimateEvents {
 
         if (windup == 1) {
             // 충전 끝 → 그 순간 바라보는 방향으로 발사
+            // 히트박스 5배, 비행 속도 2.5 (기본 1.5보다 빠르게)
             CommonCombatActions.fireProjectile(player, 40,
-                    new ItemStack(ModItems.BUDDA.get()), data.getBuddaDamage(), 5.0F);
+                    new ItemStack(ModItems.BUDDA.get()), data.getBuddaDamage(), 5.0F, 2.5F);
         }
         data.setBuddaWindupTicks(windup - 1);
     }

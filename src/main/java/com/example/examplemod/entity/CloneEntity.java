@@ -73,7 +73,7 @@ public class CloneEntity extends PathfinderMob {
         return PathfinderMob.createMobAttributes()
                 .add(Attributes.MAX_HEALTH, 20.0D)
                 .add(Attributes.MOVEMENT_SPEED, 0.3D)
-                .add(Attributes.ATTACK_DAMAGE, 1.0D)   // 플레이어 주먹과 동일 → 카타나 들면 6 (플레이어와 같음)
+                .add(Attributes.ATTACK_DAMAGE, 3.0D)   // 기본 3 + 너클 보정(+2) = 타격당 5
                 .add(Attributes.FOLLOW_RANGE, 24.0D);
     }
 
@@ -88,25 +88,59 @@ public class CloneEntity extends PathfinderMob {
 
         // 대상 목표
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));                     // 맞으면 반격
-        // 주변 적대 몹(Monster)을 자동으로 노린다. mustSee = true.
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Monster.class, true));
+        // 근처의 적 플레이어를 능동적으로 추격·공격 (소환자·같은 팀은 제외)
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false,
+                target -> !target.getUUID().equals(this.getOwnerUUID()) && !isOwnerAlly(target)));
+        // 주변 적대 몹(Monster)도 자동으로 노린다. mustSee = true.
+        this.targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, Monster.class, true));
     }
 
-    // 소환자는 절대 공격 대상이 되지 않음 — 실수로 분신을 때려도(HurtByTargetGoal) 반격 안 함
+    // 소환자(그리고 소환자와 같은 팀)는 절대 공격 대상이 되지 않음
     @Override
     public void setTarget(@Nullable LivingEntity target) {
-        if (target != null && target.getUUID().equals(this.getOwnerUUID())) {
+        if (target != null && (target.getUUID().equals(this.getOwnerUUID()) || isOwnerAlly(target))) {
             return;
         }
         super.setTarget(target);
     }
 
+    // 플레이어처럼 fallDamage 게임룰을 따름 — /gamerule fallDamage false면 분신도 낙하 데미지 없음
+    // (바닐라는 이 게임룰을 플레이어에게만 적용하고 몹은 무시한다)
+    @Override
+    public boolean causeFallDamage(float distance, float multiplier, net.minecraft.world.damagesource.DamageSource source) {
+        if (!this.level().getGameRules().getBoolean(net.minecraft.world.level.GameRules.RULE_FALL_DAMAGE)) {
+            return false;
+        }
+        return super.causeFallDamage(distance, multiplier, source);
+    }
+
     @Override
     public boolean canAttack(LivingEntity target) {
-        if (target.getUUID().equals(this.getOwnerUUID())) {
+        if (target.getUUID().equals(this.getOwnerUUID()) || isOwnerAlly(target)) {
             return false;
         }
         return super.canAttack(target);
+    }
+
+    // 소환자와 같은 팀(스코어보드)인지
+    private boolean isOwnerAlly(net.minecraft.world.entity.Entity target) {
+        if (this.getOwnerUUID() == null) {
+            return false;
+        }
+        Player owner = this.level().getPlayerByUUID(this.getOwnerUUID());
+        return owner != null && target.isAlliedTo(owner);
+    }
+
+    // 소환자 본인·아군의 공격은 분신에게 안 통함 (오폭으로 분신이 죽지 않게)
+    @Override
+    public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
+        if (source.getEntity() != null) {
+            if (source.getEntity().getUUID().equals(this.getOwnerUUID())
+                    || isOwnerAlly(source.getEntity())) {
+                return false;
+            }
+        }
+        return super.hurt(source, amount);
     }
 
     @Override

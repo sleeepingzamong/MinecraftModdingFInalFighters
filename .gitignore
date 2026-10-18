@@ -28,3 +28,4 @@ replay_*.log
 
 # Files from Forge MDK
 forge*changelog.txt
+tools/

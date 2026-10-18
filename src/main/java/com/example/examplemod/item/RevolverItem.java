@@ -69,6 +69,15 @@ public class RevolverItem extends Item {
             CommonCombatActions.fireProjectile(player, RANGE,
                     new ItemStack(ModItems.BULLET.get()), damage, 1.0F, BULLET_SPEED);
 
+            // 발사음 (연사 단조로움 방지로 피치 약간 랜덤)
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    com.example.examplemod.registry.ModSounds.REVOLVER_SHOT.get(), SoundSource.PLAYERS,
+                    0.9F, 0.95F + player.getRandom().nextFloat() * 0.1F);
+
+            // 발사 모션 (사용자 제작 gun_shot — 조준 자세 + 반동, 모두에게 보임)
+            com.example.examplemod.network.ModMessages.sendToTrackingAndSelf(
+                    new com.example.examplemod.network.PlayAnimationS2CPacket(player.getId(), "gun_shot"), player);
+
             rollNextDamage(player, data);   // 다음 탄환 값을 새로 굴림
 
             int ammo = getAmmo(stack) - 1;
@@ -90,6 +99,36 @@ public class RevolverItem extends Item {
 
     private static void rollNextDamage(ServerPlayer player, PlayerCombatData data) {
         data.setNextGunDamage(MIN_DAMAGE + player.getRandom().nextInt(MAX_DAMAGE - MIN_DAMAGE + 1));
+    }
+
+    // 우클릭: 수동 재장전 — 탄약이 줄어 있으면 언제든 갈아끼울 수 있음 (자동 재장전과 동일한 3초)
+    @Override
+    public net.minecraft.world.InteractionResultHolder<ItemStack> use(
+            Level level, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (level.isClientSide || !(player instanceof ServerPlayer serverPlayer)
+                || hand != net.minecraft.world.InteractionHand.MAIN_HAND) {
+            return net.minecraft.world.InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        }
+        if (player.getCooldowns().isOnCooldown(this)) {
+            return net.minecraft.world.InteractionResultHolder.pass(stack);   // 이미 재장전/연사 대기 중
+        }
+        if (com.example.examplemod.combat.GamblerEvents.isRouletteLocked(serverPlayer)) {
+            return net.minecraft.world.InteractionResultHolder.pass(stack);   // 룰렛 연출 중
+        }
+        if (getAmmo(stack) >= MAX_AMMO) {
+            serverPlayer.displayClientMessage(Component.literal("탄창이 가득 찼습니다."), true);
+            return net.minecraft.world.InteractionResultHolder.pass(stack);
+        }
+
+        // 자동 재장전과 같은 절차: 탄창 채움 + 3초 쿨다운 + 재장전 애니메이션 + 소리
+        setAmmo(stack, MAX_AMMO);
+        player.getCooldowns().addCooldown(this, RELOAD_TICKS);
+        stack.getOrCreateTag().putLong("reloadEnd", level.getGameTime() + RELOAD_TICKS);
+        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                SoundEvents.IRON_TRAPDOOR_OPEN, SoundSource.PLAYERS, 0.6F, 1.4F);
+        serverPlayer.displayClientMessage(Component.literal("재장전..."), true);
+        return net.minecraft.world.InteractionResultHolder.sidedSuccess(stack, false);
     }
 
     // 재장전 진행도 (클라 모델 교체용): 0 = 재장전 아님, 0~1 = 진행 중
@@ -133,6 +172,7 @@ public class RevolverItem extends Item {
     public void appendHoverText(ItemStack itemStack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.literal("도박사의 전용 무기").withStyle(ChatFormatting.GOLD));
         tooltip.add(Component.literal("좌클릭 발사 — 데미지는 운에 맡겨라 (1~7)").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("우클릭 — 수동 재장전").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("탄약 " + getAmmo(itemStack) + "/" + MAX_AMMO).withStyle(ChatFormatting.DARK_GRAY));
         super.appendHoverText(itemStack, level, tooltip, flag);
     }

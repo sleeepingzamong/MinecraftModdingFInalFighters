@@ -33,8 +33,16 @@ public class HammerSpinEvents {
         }
     }
 
+    // 회전 베기 중에는 평타 불가 (회전 자체 타격만 유효)
+    @SubscribeEvent
+    public static void onAttackEntity(net.minecraftforge.event.entity.player.AttackEntityEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player && isSpinning(player)) {
+            event.setCanceled(true);
+        }
+    }
+
     private static final double RADIUS = 3.5;               // 데미지 반경 (블록)
-    private static final float DAMAGE_PER_HIT = 1.2F;       // 타격당 데미지 (0.4초마다 → 초당 3.0 유지)
+    private static final float DAMAGE_PER_HIT = 4.0F;       // 타격당 데미지 (0.4초마다 → 초당 10 유지)
     private static final int DAMAGE_INTERVAL_TICKS = 8;     // 타격 주기 (8틱 = 0.4초, 회전 2.5바퀴에 비례)
     private static final int STAMINA_PER_SECOND = 1;        // 초당 스태미나 소모 (타격 주기와 무관)
     private static final int STOP_COOLDOWN_TICKS = 20;      // 종료 후 재사용 쿨타임 (연타 토글 방지)
@@ -74,17 +82,29 @@ public class HammerSpinEvents {
                 .orElse(false);
     }
 
+    // 회전 중 죽으면 즉시 종료 — "꺼짐" 패킷을 못 받은 클라이언트에서 시체가 계속 도는 버그 방지
+    @SubscribeEvent
+    public static void onDeath(net.minecraftforge.event.entity.living.LivingDeathEvent event) {
+        if (event.getEntity() instanceof ServerPlayer player) {
+            toggleOff(player);
+        }
+    }
+
     // PlayerTickHub가 매 틱 호출
     public static void tick(ServerPlayer player, ServerLevel level, PlayerCombatData data) {
         if (!data.isHammerSpinning()) {
             return;
         }
 
-        // 망치를 놓으면 즉시 종료
-        if (!(player.getMainHandItem().getItem() instanceof HammerItem)) {
+        // 망치를 놓거나 스턴에 걸리면 즉시 종료 (스턴 중엔 공격 불가)
+        if (!(player.getMainHandItem().getItem() instanceof HammerItem) || StunManager.isStunned(player)) {
             stopSpin(player, data);
             return;
         }
+
+        // 회전 중 이동속도 +20% (신속 I — 매 틱 갱신, 회전이 끝나면 곧 사라짐. 아이콘 표시)
+        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                net.minecraft.world.effect.MobEffects.MOVEMENT_SPEED, 12, 0, false, false, true));
 
         // 타격: 게임시간 기준 일정 주기 (스태미나 주기와 완전 분리 — 박자 균일)
         if (level.getGameTime() % DAMAGE_INTERVAL_TICKS == 0) {
@@ -115,7 +135,7 @@ public class HammerSpinEvents {
     private static void doSpinDamage(ServerPlayer player, ServerLevel level) {
         AABB box = player.getBoundingBox().inflate(RADIUS, 1.5, RADIUS);
         for (LivingEntity target : level.getEntitiesOfClass(LivingEntity.class, box,
-                e -> e != player && e.isAlive())) {
+                e -> e != player && e.isAlive() && !e.isAlliedTo(player))) {   // 같은 팀 제외
             double dx = target.getX() - player.getX();
             double dz = target.getZ() - player.getZ();
             if (dx * dx + dz * dz <= RADIUS * RADIUS) {
@@ -127,15 +147,15 @@ public class HammerSpinEvents {
             }
         }
 
-        // 휘두르는 소리 + 반경 가장자리에 칼바람 파티클 링
+        // 휘두르는 소리 + 데미지 반경 가장자리에 칼바람 파티클 링 (보이는 링 = 실제 판정 범위)
         level.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.PLAYER_ATTACK_SWEEP, SoundSource.PLAYERS, 1.0F, 0.9F);
-        for (int i = 0; i < 8; i++) {
-            double angle = Math.PI * 2.0 * i / 8.0;
+        for (int i = 0; i < 12; i++) {
+            double angle = Math.PI * 2.0 * i / 12.0;
             level.sendParticles(ParticleTypes.SWEEP_ATTACK,
-                    player.getX() + Math.cos(angle) * 2.5,
+                    player.getX() + Math.cos(angle) * RADIUS,
                     player.getY() + 1.0,
-                    player.getZ() + Math.sin(angle) * 2.5,
+                    player.getZ() + Math.sin(angle) * RADIUS,
                     1, 0, 0, 0, 0);
         }
     }

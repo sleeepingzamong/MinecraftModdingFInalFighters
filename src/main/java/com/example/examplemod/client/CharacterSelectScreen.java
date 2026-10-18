@@ -22,7 +22,8 @@ import java.util.Locale;
  * 회전 휠 캐릭터 선택창.
  * - 화면 크기에 맞춰 UI 전체가 자동 확대 (논리 좌표 300×210 기준, 최대 2.5배)
  * - 회전 중에는 부채꼴 판·선택 하이라이트·캐릭터가 전부 한 덩어리로 같이 돎.
- *   판이 8조각 대칭이라 45°마다 원위치와 같아짐 → 멈추면 원본 텍스처를 그대로 그려 항상 선명.
+ *   판이 SLOTS조각 대칭이라 SLOT_ANGLE마다 원위치와 같아짐 → 멈추면 원본 텍스처를 그대로 그려 항상 선명.
+ * - 캐릭터 추가 시: CharacterType에 항목 추가 + GenWheel9(스크래치 생성기)의 N을 맞춰 휠 텍스처 재생성.
  * - 조작: ←/→(A/D) 회전, Enter/가운데 원 클릭 = 확정, 부채꼴 클릭 = 그 캐릭터를 12시로 회전
  * - 초상화(portrait_이름.png)가 폴더에 있으면 자동 표시, 없으면 이름 글자만
  */
@@ -34,12 +35,19 @@ public class CharacterSelectScreen extends Screen {
             new ResourceLocation(ExampleMod.MODID, "textures/gui/select/wheel.png");
     private static final ResourceLocation WHEEL_SELECTED =
             new ResourceLocation(ExampleMod.MODID, "textures/gui/select/wheel_selected.png");
-    private static final ResourceLocation[] WHEEL_HOVER = new ResourceLocation[8];
+    // 휠 칸 수 = 캐릭터 수 (NONE 제외). 휠 텍스처(wheel*.png)도 같은 조각 수로 구워져 있어야 함.
+    private static final int SLOTS = CharacterType.values().length - 1;
+    private static final CharacterType[] WHEEL_ORDER = {
+            CharacterType.MONKEY, CharacterType.CYBORG, CharacterType.GAMBLER, CharacterType.DOJUK, CharacterType.SWORDSMAN,
+            CharacterType.PHOENIX, CharacterType.HAMMER, CharacterType.BERSERKER, CharacterType.HACKER};
+    private static final float SLOT_ANGLE = 360f / SLOTS;
+
+    private static final ResourceLocation[] WHEEL_HOVER = new ResourceLocation[SLOTS];
     private static final ResourceLocation CENTER =
             new ResourceLocation(ExampleMod.MODID, "textures/gui/select/center_circle.png");
 
     static {
-        for (int k = 0; k < 8; k++) {
+        for (int k = 0; k < SLOTS; k++) {
             WHEEL_HOVER[k] = new ResourceLocation(ExampleMod.MODID,
                     "textures/gui/select/wheel_hover_" + k + ".png");
         }
@@ -68,6 +76,10 @@ public class CharacterSelectScreen extends Screen {
     private float rot = 0f;        // 현재 회전 각도
     private float targetRot = 0f;  // 목표 회전 각도 (누적값)
 
+    // 제한시간: 20초 안에 안 고르면 무작위 캐릭터 자동 확정
+    private static final int AUTO_PICK_TICKS = 20 * 20;
+    private int autoPickLeft = AUTO_PICK_TICKS;
+
     // 화면 → 논리 좌표 변환용 (updateLayout에서 갱신)
     private float uiScale = 1f;
     private float originX = 0f;
@@ -76,9 +88,11 @@ public class CharacterSelectScreen extends Screen {
     public CharacterSelectScreen() {
         super(Component.literal("캐릭터 선택"));
 
-        List<CharacterType> list = new ArrayList<>();
+        // 휠 순서 (12시부터 시계방향) — 선택창에서만 쓰는 순서라 CharacterType 선언 순서와 별개.
+        // 여기 없는 캐릭터(새로 추가된 캐릭터)는 뒤에 자동으로 붙음
+        List<CharacterType> list = new ArrayList<>(List.of(WHEEL_ORDER));
         for (CharacterType type : CharacterType.values()) {
-            if (type != CharacterType.NONE) {
+            if (type != CharacterType.NONE && !list.contains(type)) {
                 list.add(type);
             }
         }
@@ -133,9 +147,9 @@ public class CharacterSelectScreen extends Screen {
 
         guiGraphics.blit(BG, 0, 0, 0, 0, LOGICAL_W, LOGICAL_H, LOGICAL_W, LOGICAL_H);
 
-        // 휠 판: 회전 중에는 판도 같이 돎. 8조각 대칭이라 -22.5°~+22.5° 범위만 돌려도
+        // 휠 판: 회전 중에는 판도 같이 돎. SLOTS조각 대칭이라 반 칸 범위만 돌려도
         // 시각적으로 연속 회전과 동일 → 멈추면 spin=0이 되어 원본 그대로 (항상 선명)
-        float spin = rot - 45f * Math.round(rot / 45f);
+        float spin = rot - SLOT_ANGLE * Math.round(rot / SLOT_ANGLE);
         if (Math.abs(spin) < 0.05f) {
             guiGraphics.blit(WHEEL, wheelX, wheelY, 0, 0, WHEEL_SIZE, WHEEL_SIZE, WHEEL_SIZE, WHEEL_SIZE);
         } else {
@@ -143,7 +157,7 @@ public class CharacterSelectScreen extends Screen {
         }
 
         // 선택 하이라이트: 선택된 캐릭터의 조각에 붙어서 함께 12시로 미끄러져 들어옴
-        float selAngle = selectedIndex * 45f + rot;
+        float selAngle = selectedIndex * SLOT_ANGLE + rot;
         selAngle -= 360f * Math.round(selAngle / 360f);
         if (Math.abs(selAngle) < 0.05f) {
             guiGraphics.blit(WHEEL_SELECTED, wheelX, wheelY, 0, 0, WHEEL_SIZE, WHEEL_SIZE, WHEEL_SIZE, WHEEL_SIZE);
@@ -169,7 +183,7 @@ public class CharacterSelectScreen extends Screen {
 
         // 캐릭터(초상화+이름): 궤도를 따라 돌되 기울지는 않음 (관람차 방식)
         for (int i = 0; i < chars.length; i++) {
-            double angle = Math.toRadians(i * 45 + rot);
+            double angle = Math.toRadians(i * SLOT_ANGLE + rot);
             int px = (int) Math.round(cx + PORTRAIT_R * Math.sin(angle));
             int py = (int) Math.round(cy - PORTRAIT_R * Math.cos(angle));
             int nameColor = (i == selectedIndex) ? COL_NAME_SEL : COL_NAME_IDLE;
@@ -197,13 +211,24 @@ public class CharacterSelectScreen extends Screen {
         String staminaText = maxStamina >= 1000 ? "무제한" : String.valueOf(maxStamina);
         guiGraphics.drawString(this.font, "체력 " + maxHealth, INFO_X, 36, 0xE24B4A);
         guiGraphics.drawString(this.font, "스태미나 " + staminaText, INFO_X, 48, 0x8FBF4D);
+        // 설명이 칸 폭을 넘으면 자동 줄바꿈
+        int wrapWidth = LOGICAL_W - INFO_X - 6;
         int lineY = 68;
         for (String line : selected.getDescription()) {
-            guiGraphics.drawString(this.font, line, INFO_X, lineY, COL_NAME_IDLE);
-            lineY += 12;
+            for (net.minecraft.util.FormattedCharSequence seq
+                    : this.font.split(net.minecraft.network.chat.FormattedText.of(line), wrapWidth)) {
+                guiGraphics.drawString(this.font, seq, INFO_X, lineY, COL_NAME_IDLE);
+                lineY += 11;
+            }
+            lineY += 1;
         }
 
         guiGraphics.drawCenteredString(this.font, "← → 회전 · Enter 확정", cx, LOGICAL_H - 14, COL_HINT);
+
+        // 남은 시간 카운트다운 (5초 이하면 빨갛게)
+        int secondsLeft = (autoPickLeft + 19) / 20;
+        guiGraphics.drawCenteredString(this.font, secondsLeft + "초 후 무작위 선택",
+                cx, LOGICAL_H - 26, secondsLeft <= 5 ? 0xFF5050 : COL_HINT);
 
         guiGraphics.pose().popPose();
         RenderSystem.disableBlend();
@@ -226,7 +251,7 @@ public class CharacterSelectScreen extends Screen {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    // 논리 좌표 → 화면상 부채꼴 칸 번호 (12시=0, 시계방향 0~7). 휠 밖이면 -1
+    // 논리 좌표 → 화면상 부채꼴 칸 번호 (12시=0, 시계방향 0~SLOTS-1). 휠 밖이면 -1
     private int slotAt(double lx, double ly, int cx, int cy) {
         double dx = lx - cx, dy = ly - cy;
         double r = Math.sqrt(dx * dx + dy * dy);
@@ -234,18 +259,28 @@ public class CharacterSelectScreen extends Screen {
             return -1;
         }
         double angleDeg = Math.toDegrees(Math.atan2(dx, -dy));
-        return Math.floorMod((int) Math.round(angleDeg / 45.0), 8);
+        return Math.floorMod((int) Math.round(angleDeg / SLOT_ANGLE), SLOTS);
     }
 
     // dir: +1 = 오른쪽(시계방향 다음) 캐릭터를 12시로, -1 = 왼쪽 캐릭터를 12시로
     private void rotate(int dir) {
         selectedIndex = Math.floorMod(selectedIndex + dir, chars.length);
-        targetRot -= dir * 45f;
+        targetRot -= dir * SLOT_ANGLE;
     }
 
     private void confirm() {
         ModMessages.sendToServer(new SelectCharacterC2SPacket(chars[selectedIndex]));
         this.onClose();
+    }
+
+    // 매 틱: 제한시간 카운트다운 — 다 되면 무작위 캐릭터로 자동 확정
+    @Override
+    public void tick() {
+        super.tick();
+        if (--autoPickLeft <= 0) {
+            selectedIndex = (int) (Math.random() * chars.length);
+            confirm();
+        }
     }
 
     @Override
@@ -282,13 +317,13 @@ public class CharacterSelectScreen extends Screen {
             int slot = slotAt(lx, ly, cx, cy);
             if (slot >= 0) {
                 double angleDeg = Math.toDegrees(Math.atan2(lx - cx, -(ly - cy)));
-                int charIndex = Math.floorMod((int) Math.round((angleDeg - rot) / 45.0), chars.length);
+                int charIndex = Math.floorMod((int) Math.round((angleDeg - rot) / SLOT_ANGLE), chars.length);
                 int diff = Math.floorMod(charIndex - selectedIndex, chars.length);
                 if (diff > chars.length / 2) {
                     diff -= chars.length;
                 }
                 selectedIndex = charIndex;
-                targetRot -= diff * 45f;
+                targetRot -= diff * SLOT_ANGLE;
                 return true;
             }
         }

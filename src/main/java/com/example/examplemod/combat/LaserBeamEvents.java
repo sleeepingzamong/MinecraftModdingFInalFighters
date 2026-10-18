@@ -19,7 +19,8 @@ import net.minecraft.world.phys.Vec3;
 public class LaserBeamEvents {
 
     private static final double RANGE  = 30.0;   // 최대 사거리(칸)
-    private static final float  DAMAGE = 4.0F;   // 적중당 데미지
+    private static final float  DAMAGE = 5.0F;   // 적중당 데미지
+    private static final int    HIT_INTERVAL_TICKS = 10;   // 타격 주기 0.5초 → 초당 10 (무적틱에 의존하지 않는 자체 박자)
     private static final double WIDTH  = 1.2;    // 빔 두께(적 판정 반경) — 보이는 굵기 2배에 맞춤
 
     // PlayerTickHub가 매 틱 호출 (이미 조회한 data를 받아 재조회 없음)
@@ -80,7 +81,7 @@ public class LaserBeamEvents {
         // 광선 위 적에게 데미지
         AABB region = new AABB(start, tip).inflate(WIDTH);
         for (LivingEntity t : level.getEntitiesOfClass(LivingEntity.class, region,
-                e -> e.isAlive() && e != player)) {
+                e -> e.isAlive() && e != player && !e.isAlliedTo(player))) {   // 같은 팀 제외
             Vec3 c = t.getBoundingBox().getCenter();
             double proj = c.subtract(start).dot(look);        // 광선 진행 방향 투영 길이
             if (proj < 0 || proj > len) {
@@ -90,9 +91,12 @@ public class LaserBeamEvents {
             if (closest.distanceTo(c) <= WIDTH + t.getBbWidth() / 2.0) {
                 // 빔에 닿아 있는 동안 발광 (매 틱 갱신 → 벗어나면 곧 꺼짐)
                 t.addEffect(new MobEffectInstance(MobEffects.GLOWING, 15, 0, false, false));
-                UltimateGaugeEvents.setUltimateDamage(true);   // 궁극기 데미지 → 시전자 게이지 충전 없음
-                t.hurt(player.damageSources().playerAttack(player), DAMAGE);
-                UltimateGaugeEvents.setUltimateDamage(false);
+                // 데미지는 0.5초마다만 (무적시간 단축 이후 매 틱 타격이 다 들어가 갈리는 것 방지)
+                if (level.getGameTime() % HIT_INTERVAL_TICKS == 0) {
+                    UltimateGaugeEvents.setUltimateDamage(true);   // 궁극기 데미지 → 시전자 게이지 충전 없음
+                    t.hurt(player.damageSources().playerAttack(player), DAMAGE);
+                    UltimateGaugeEvents.setUltimateDamage(false);
+                }
             }
         }
 

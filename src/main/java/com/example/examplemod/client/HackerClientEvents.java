@@ -70,9 +70,9 @@ public class HackerClientEvents {
         int w = mc.getWindow().getGuiScaledWidth();
         int h = mc.getWindow().getGuiScaledHeight();
 
-        // 노이즈 바: 매 틱 패턴이 바뀌는 반투명 가로줄들 (시안·마젠타·흰색) — 개수·두께·진하기 강화
+        // 노이즈 바: 매 틱 패턴이 바뀌는 반투명 가로줄들 (시안·마젠타·흰색) — 시야 방해 줄인 버전
         RandomSource random = RandomSource.create(mc.player.tickCount);
-        for (int i = 0; i < 22; i++) {
+        for (int i = 0; i < 8; i++) {
             int y = random.nextInt(h);
             int barH = 1 + random.nextInt(4);
             int x = random.nextInt(w / 2);
@@ -86,7 +86,7 @@ public class HackerClientEvents {
         }
 
         // 굵은 글리치 블록 (화면이 뭉텅뭉텅 깨지는 느낌)
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < 2; i++) {
             int x = random.nextInt(w);
             int y = random.nextInt(h);
             int blockW = 10 + random.nextInt(50);
@@ -95,14 +95,14 @@ public class HackerClientEvents {
             g.fill(x, y, x + blockW, y + blockH, color);
         }
 
-        // 간헐적 전체 화면 플래시 (지지직 번쩍)
-        if (random.nextInt(8) == 0) {
+        // 간헐적 전체 화면 플래시 (지지직 번쩍) — 빈도 절반
+        if (random.nextInt(16) == 0) {
             g.fill(0, 0, w, h, random.nextBoolean() ? 0x2800F0FF : 0x28FF00E0);
         }
 
-        // 상하 가장자리 시안 띠 (더 두껍게)
-        g.fill(0, 0, w, 4, 0x9000F0FF);
-        g.fill(0, h - 4, w, h, 0x9000F0FF);
+        // 상하 가장자리 시안 띠 (얇게)
+        g.fill(0, 0, w, 2, 0x9000F0FF);
+        g.fill(0, h - 2, w, h, 0x9000F0FF);
 
         // "SYSTEM HACKED" 깜빡임 (2배 크기, 더 빠르게)
         if ((mc.player.tickCount / 3) % 2 == 0) {

@@ -22,15 +22,28 @@ public class KnifeItem extends SwordItem {
 
     private static final UUID REACH_MODIFIER_UUID =
             UUID.fromString("3c1a9f2b-7d4e-4c5a-8b6f-333333333333");
+    private static final UUID BONUS_DAMAGE_UUID =
+            UUID.fromString("3c1a9f2b-7d4e-4c5a-8b6f-333333333334");
 
     private final Multimap<Attribute, AttributeModifier> customAttributes;
 
     public KnifeItem(Properties properties) {
-        // 공격력 4 (나무 0 + 3 + 1), 공격속도 3.6회/초 (일반 검 1.6회/초)
-        super(Tiers.WOOD, 3, -0.4F, properties);
+        // 공격력 3.5 (나무 0+2+1 +0.5 보정), 공격속도 3.0회/초 — 대신 사거리 최단·체력 최저
+        super(Tiers.WOOD, 2, -1.0F, properties);
 
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
         builder.putAll(super.getDefaultAttributeModifiers(EquipmentSlot.MAINHAND));
+
+        // 공격력 +0.5 (정수 단위 생성자로는 못 넣는 소수 보정 → 최종 3.5)
+        builder.put(
+                net.minecraft.world.entity.ai.attributes.Attributes.ATTACK_DAMAGE,
+                new AttributeModifier(
+                        BONUS_DAMAGE_UUID,
+                        "Knife bonus damage",
+                        0.5D,
+                        AttributeModifier.Operation.ADDITION
+                )
+        );
 
         // 사거리 -0.5칸 (기본 3.0 → 2.5) — 여의봉 reach 보정의 반대
         builder.put(

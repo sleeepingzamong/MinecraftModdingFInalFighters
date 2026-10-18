@@ -1,0 +1,50 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"gun_shoting": {
+			"loop": true,
+			"bones": {
+				"torso": {
+					"rotation": {
+						"vector": [0, -30, 0]
+					},
+					"position": {
+						"vector": [0, 0, 0]
+					}
+				},
+				"right_arm": {
+					"rotation": {
+						"vector": [-82.5, 0, 0]
+					},
+					"position": {
+						"vector": [0, 0, -2]
+					}
+				},
+				"left_arm": {
+					"rotation": {
+						"vector": [-4.114, -22.1399, 10.8052]
+					},
+					"position": {
+						"vector": [0, 0, 2]
+					}
+				},
+				"right_leg": {
+					"rotation": {
+						"vector": [0, -30, 0]
+					},
+					"position": {
+						"vector": [0, 0, -1]
+					}
+				},
+				"left_leg": {
+					"rotation": {
+						"vector": [0, -40, 0]
+					},
+					"position": {
+						"vector": [0, 0, 2]
+					}
+				}
+			}
+		}
+	}
+}

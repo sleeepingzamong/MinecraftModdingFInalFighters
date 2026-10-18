@@ -45,7 +45,7 @@ public class UseSkillC2SPacket {
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
 
-            if (player != null && skillType != null) {
+            if (player != null && skillType != null && !player.isSpectator()) {   // 관전 중 스킬 불가
                 SkillManager.useSkill(player, skillType, chargeTick);
             }
         });
